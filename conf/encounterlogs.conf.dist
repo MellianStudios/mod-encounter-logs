@@ -1,0 +1,52 @@
+[worldserver]
+
+########################################
+# General configuration
+########################################
+#
+#    EncounterLogs.General.Enabled
+#        Default:     1 - Enabled
+#                     0 - Disabled
+#
+
+EncounterLogs.General.Enabled = 1
+
+########################################
+# Logging configuration
+########################################
+#
+#    EncounterLogs.Logging.Scope
+#        Default:     3 Dungeons and raids
+#                     2 Raids
+#                     1 Dungeons
+#
+
+EncounterLogs.Logging.Scope = 3
+
+#
+#    EncounterLogs.Logging.OpenWorld
+#        Description: List of creature guids separated with ;
+#        Default:     (empty)
+#
+
+EncounterLogs.Logging.OpenWorld =
+
+########################################
+# System configuration
+# WARNING NEVER TOUCH THESE UNLESS YOU ARE SURE WHAT YOU ARE DOING
+########################################
+#
+#    EncounterLogs.System.SaveFrequency
+#        Description: Interval for saving logs to DB in miliseconds
+#        Default:     1000
+#
+
+EncounterLogs.System.SaveFrequency = 1000
+
+#
+#    EncounterLogs.System.BatchSize
+#        Description: Count of values per insert
+#        Default:     1000
+#
+
+EncounterLogs.System.BatchSize = 1000
