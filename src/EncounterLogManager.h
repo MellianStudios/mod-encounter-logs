@@ -26,13 +26,6 @@ enum EncounterLogUnitType
     ENCOUNTER_LOG_CREATURE = 2,
 };
 
-enum EncounterLogCostType
-{
-    ENCOUNTER_LOG_NONE = 1,
-    ENCOUNTER_LOG_MANA = 2,
-    ENCOUNTER_LOG_HP = 3,
-};
-
 /*
  * absorb
  * resist (portion)
@@ -40,15 +33,19 @@ enum EncounterLogCostType
  */
 enum EncounterLogSpellResult
 {
-    ENCOUNTER_LOG_HIT = 1,
-    ENCOUNTER_LOG_MISS = 2,
-    ENCOUNTER_LOG_CRIT = 3,
-    ENCOUNTER_LOG_DODGE = 4,
-    ENCOUNTER_LOG_PARRY = 5,
-    ENCOUNTER_LOG_RESIST = 6,
-    ENCOUNTER_LOG_REFLECT = 7,
-    ENCOUNTER_LOG_IMMUNE = 8,
-    ENCOUNTER_LOG_EVADE = 9,
+    ENCOUNTER_LOG_SPELL_RESULT_EMPTY = 0,
+    ENCOUNTER_LOG_SPELL_RESULT_NONE = 1,
+    ENCOUNTER_LOG_SPELL_RESULT_MISS = 2,
+    ENCOUNTER_LOG_SPELL_RESULT_RESIST = 3,
+    ENCOUNTER_LOG_SPELL_RESULT_DODGE = 4,
+    ENCOUNTER_LOG_SPELL_RESULT_PARRY = 5,
+    ENCOUNTER_LOG_SPELL_RESULT_BLOCK = 6,
+    ENCOUNTER_LOG_SPELL_RESULT_EVADE = 7,
+    ENCOUNTER_LOG_SPELL_RESULT_IMMUNE = 8,
+    ENCOUNTER_LOG_SPELL_RESULT_DEFLECT = 9,
+    ENCOUNTER_LOG_SPELL_RESULT_ABSORB = 10,
+    ENCOUNTER_LOG_SPELL_RESULT_REFLECT = 11,
+    ENCOUNTER_LOG_SPELL_RESULT_CRIT = 12,
 };
 
 class EncounterLogCombat
@@ -102,11 +99,11 @@ private:
     std::uint_fast32_t spell_id;
     std::uint_fast32_t caster_guid;
     std::uint_fast32_t target_guid;
-    std::uint_fast8_t cost_type;
     std::uint_fast32_t cost;
     std::uint_fast32_t value;
     std::uint_fast8_t result;
     std::uint_fast64_t timestamp;
+    bool value_not_present;
 
 public:
     EncounterLogSpell(
@@ -114,14 +111,15 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
         std::uint_fast32_t caster_guid,
-        std::uint_fast8_t cost_type,
         std::uint_fast64_t timestamp,
         std::uint_fast32_t target_guid = 0,
         std::uint_fast32_t cost = 0,
         std::uint_fast32_t value = 0,
-        std::uint_fast8_t result = 1
+        std::uint_fast8_t result = 1,
+        bool value_not_present = false
     ) : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_guid{caster_guid},
-        target_guid{target_guid}, cost_type{cost_type}, cost{cost}, value{value}, result{result}, timestamp{timestamp}
+        target_guid{target_guid}, cost{cost}, value{value}, result{result}, timestamp{timestamp},
+        value_not_present{value_not_present}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -138,11 +136,15 @@ public:
         result_string.append(",");
         result_string.append(std::to_string(target_guid));
         result_string.append(",");
-        result_string.append(std::to_string(cost_type));
-        result_string.append(",");
         result_string.append(std::to_string(cost));
         result_string.append(",");
-        result_string.append(std::to_string(value));
+
+        if (value_not_present) {
+            result_string.append("null");
+        } else {
+            result_string.append(std::to_string(value));
+        }
+
         result_string.append(",");
         result_string.append(std::to_string(result));
         result_string.append(",");
@@ -374,12 +376,12 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
         std::uint_fast32_t caster_guid,
-        std::uint_fast8_t cost_type,
         std::uint_fast64_t timestamp,
         std::uint_fast32_t target_guid = 0,
         std::uint_fast32_t cost = 0,
         std::uint_fast32_t value = 0,
-        std::uint_fast8_t result = 1
+        std::uint_fast8_t result = 1,
+        bool value_not_present = false
     )
     {
         spell_buffer.insert({spell_first, {
@@ -387,12 +389,12 @@ public:
             instance_id,
             spell_id,
             caster_guid,
-            cost_type,
             timestamp,
             target_guid,
             cost,
             value,
-            result
+            result,
+            value_not_present
         }});
 
         spell_first++;
@@ -613,18 +615,18 @@ class EncounterLogs
 private:
     std::uint_fast32_t m_map_id;
     std::uint_fast32_t m_instance_id;
-    std::uint_fast32_t m_started_at;
+    std::uint_fast32_t m_timestamp;
     std::thread m_saver;
     std::atomic<bool> m_stop_saver{false};
     Circumrota m_buffer;
 
 public:
-    EncounterLogs(std::uint_fast32_t map_id, std::uint_fast32_t instance_id, std::uint_fast32_t started_at)
-        : m_map_id{map_id}, m_instance_id{instance_id}, m_started_at{started_at}
+    EncounterLogs(std::uint_fast32_t map_id, std::uint_fast32_t instance_id, std::uint_fast32_t timestamp)
+        : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
     {
         LoginDatabase.Execute(
-            "INSERT INTO encounter_logs (map_id, instance_id, started_at) VALUES (" +
-            std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_started_at) +
+            "INSERT INTO encounter_logs (map_id, instance_id, timestamp) VALUES (" +
+            std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_timestamp) +
             ")"
         );
 
@@ -676,7 +678,7 @@ public:
                 if (spell_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_guid, target_guid, cost_type, cost, value, result, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_guid, target_guid, cost, value, result, timestamp) VALUES " +
                             m_buffer.retrieveSpells(spell_count)
                         );
                     }
@@ -758,17 +760,16 @@ public:
 class EncounterLogManager
 {
 private:
-    static std::uint_fast32_t scope;
     static std::unordered_map<std::uint_fast32_t, std::unique_ptr<EncounterLogs>> m_logs;
 
 public:
-    static void newLog(std::uint_fast32_t map_id, std::uint_fast32_t instance_id, std::uint_fast32_t started_at)
+    static void newLog(std::uint_fast32_t map_id, std::uint_fast32_t instance_id, std::uint_fast32_t timestamp)
     {
         if (m_logs.contains(instance_id)) {
             return;
         }
 
-        m_logs.insert({instance_id, std::make_unique<EncounterLogs>(map_id, instance_id, started_at)});
+        m_logs.insert({instance_id, std::make_unique<EncounterLogs>(map_id, instance_id, timestamp)});
     }
 
     static EncounterLogs *getLog(std::uint_fast32_t instance_id)
@@ -778,12 +779,16 @@ public:
 
     static bool dungeonsDisabled()
     {
-        return scope == ENCOUNTER_LOG_EVERYTHING || scope == ENCOUNTER_LOG_DUNGEON;
+        auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
+
+        return scope != ENCOUNTER_LOG_EVERYTHING && scope != ENCOUNTER_LOG_DUNGEON;
     }
 
     static bool raidsDisabled()
     {
-        return scope == ENCOUNTER_LOG_EVERYTHING || scope == ENCOUNTER_LOG_RAID;
+        auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
+
+        return scope != ENCOUNTER_LOG_EVERYTHING && scope != ENCOUNTER_LOG_RAID;
     }
 };
 

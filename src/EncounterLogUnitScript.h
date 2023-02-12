@@ -26,7 +26,7 @@ public:
             return;
         }
 
-        if (!caster->IsPlayer()) {
+        if (!caster->IsPlayer() || !caster->IsInCombat()) {
             return;
         }
 
@@ -34,14 +34,45 @@ public:
 
         auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
 
+        std::uint_fast32_t target_guid{0};
+        std::uint_fast32_t value{0};
+
         if (targets->GetUnitTarget()) {
-            if (targets->GetUnitTarget()->IsPlayer()) {
-            } else {
+            target_guid = targets->GetUnitTarget()->IsPlayer()
+                          ? targets->GetUnitTarget()->GetGUID().GetRawValue()
+                          : targets->GetUnitTarget()->ToCreature()->GetSpawnId();
+        }
+
+
+        if (spell->GetUniqueTargetInfo()->empty()) {
+
+        } else if (spell->GetUniqueTargetInfo()->size() == 1) {
+            for (auto &hit: *spell->GetUniqueTargetInfo()) {
+                value = hit.damage;
+            }
+        } else {
+            for (auto &hit: *spell->GetUniqueTargetInfo()) {
+                EncounterLogManager::getLog(caster->GetInstanceId())->getBuffer().pushAreaSpell(
+                    spell->m_spellInfo->Id,
+                    caster->IsPlayer() ? caster->GetGUID().GetRawValue() : caster->ToCreature()->GetSpawnId(),
+                    hit.targetGUID.GetRawValue(),
+                    hit.crit ? ENCOUNTER_LOG_SPELL_RESULT_CRIT : (hit.reflectResult + 1),
+                    timestamp,
+                    hit.damage
+                );
             }
         }
 
-        for (auto &hit: *spell->GetUniqueTargetInfo()) {
-        }
+        EncounterLogManager::getLog(caster->GetInstanceId())->getBuffer().pushSpell(
+            caster->GetMapId(),
+            caster->GetInstanceId(),
+            spell->m_spellInfo->Id,
+            caster->IsPlayer() ? caster->GetGUID().GetRawValue() : caster->ToCreature()->GetSpawnId(),
+            timestamp,
+            target_guid,
+            spell->GetPowerCost(),
+            value
+        );
     }
 };
 

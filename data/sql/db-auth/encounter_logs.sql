@@ -3,7 +3,7 @@ CREATE TABLE `encounter_logs`
 (
     `map_id`      SMALLINT UNSIGNED NOT NULL,
     `instance_id` SMALLINT UNSIGNED NOT NULL,
-    `state`       BIGINT UNSIGNED   NOT NULL
+    `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -27,9 +27,8 @@ CREATE TABLE `encounter_log_spells`
     `spell_id`    INT UNSIGNED      NOT NULL,
     `caster_guid` INT UNSIGNED      NOT NULL,
     `target_guid` INT UNSIGNED,
-    `cost_type`   TINYINT UNSIGNED  NOT NULL,
     `cost`        INT UNSIGNED,
-    `value`       INT UNSIGNED,
+    `value`       INT,
     `result`      TINYINT UNSIGNED,
     `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
@@ -41,7 +40,7 @@ CREATE TABLE `encounter_log_area_spells`
     `spell_id`    INT UNSIGNED     NOT NULL,
     `caster_guid` INT UNSIGNED     NOT NULL,
     `target_guid` INT UNSIGNED     NOT NULL,
-    `value`       INT UNSIGNED,
+    `value`       INT,
     `result`      TINYINT UNSIGNED NOT NULL,
     `timestamp`   BIGINT UNSIGNED  NOT NULL
 ) ENGINE = InnoDB
