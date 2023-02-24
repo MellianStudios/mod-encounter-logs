@@ -43,7 +43,6 @@ public:
                           : targets->GetUnitTarget()->ToCreature()->GetSpawnId();
         }
 
-
         if (spell->GetUniqueTargetInfo()->empty()) {
 
         } else if (spell->GetUniqueTargetInfo()->size() == 1) {
