@@ -13,8 +13,9 @@ CREATE TABLE `encounter_log_combats`
     `map_id`      SMALLINT UNSIGNED NOT NULL,
     `instance_id` SMALLINT UNSIGNED NOT NULL,
     `guid`        INT UNSIGNED      NOT NULL,
-    `unit_type`   TINYINT UNSIGNED  NOT NULL,
     `state`       TINYINT UNSIGNED  NOT NULL,
+    `gear`        LONGTEXT,
+    `talents`     TEXT,
     `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
@@ -43,19 +44,6 @@ CREATE TABLE `encounter_log_area_spells`
     `value`       INT,
     `result`      TINYINT UNSIGNED NOT NULL,
     `timestamp`   BIGINT UNSIGNED  NOT NULL
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
-
-DROP TABLE IF EXISTS `encounter_log_attacks`;
-CREATE TABLE `encounter_log_attacks`
-(
-    `map_id`        SMALLINT UNSIGNED NOT NULL,
-    `instance_id`   SMALLINT UNSIGNED NOT NULL,
-    `attacker_guid` INT UNSIGNED      NOT NULL,
-    `target_guid`   INT UNSIGNED      NOT NULL,
-    `value`         INT UNSIGNED,
-    `result`        TINYINT UNSIGNED  NOT NULL,
-    `timestamp`     BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 

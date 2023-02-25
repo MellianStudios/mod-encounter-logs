@@ -2,7 +2,6 @@
 #include "EncounterLogAllMapScript.h"
 #include "EncounterLogMovementHandlerScript.h"
 #include "EncounterLogPlayerScript.h"
-#include "EncounterLogThreatScript.h"
 #include "EncounterLogUnitScript.h"
 
 void Addmod_encounter_logsScripts()
@@ -13,9 +12,8 @@ void Addmod_encounter_logsScripts()
         return;
     }
 
-    new EncounterLogThreatScript();
     new EncounterLogMovementHandlerScript();
     new EncounterLogAllMapScript();
-//    new EncounterLogPlayerScript();
+    new EncounterLogPlayerScript();
     new EncounterLogUnitScript();
 }

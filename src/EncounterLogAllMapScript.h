@@ -27,7 +27,6 @@ public:
         }
 
         auto current_time = std::chrono::system_clock::now();
-
         auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(current_time.time_since_epoch()).count();
 
         EncounterLogManager::newLog(player->GetMapId(), player->GetInstanceId(), timestamp);

@@ -1,6 +1,7 @@
 #ifndef AZEROTHCORE_ENCOUNTERLOGMANAGER_H
 #define AZEROTHCORE_ENCOUNTERLOGMANAGER_H
 
+#include <utility>
 #include "Configuration/Config.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
@@ -26,11 +27,6 @@ enum EncounterLogUnitType
     ENCOUNTER_LOG_CREATURE = 2,
 };
 
-/*
- * absorb
- * resist (portion)
- * block
- */
 enum EncounterLogSpellResult
 {
     ENCOUNTER_LOG_SPELL_RESULT_EMPTY = 0,
@@ -54,8 +50,9 @@ private:
     std::uint_fast16_t map_id;
     std::uint_fast16_t instance_id;
     std::uint_fast32_t guid;
-    std::uint_fast8_t unit_type;
     std::uint_fast8_t state;
+    std::string gear;
+    std::string talents;
     std::uint_fast64_t timestamp;
 
 public:
@@ -63,11 +60,12 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
-        std::uint_fast8_t unit_type,
         std::uint_fast8_t state,
+        std::string gear,
+        std::string talents,
         std::uint_fast64_t timestamp
-    ) : map_id{map_id}, instance_id{instance_id}, guid{guid}, unit_type{unit_type},
-        state{state}, timestamp{timestamp}
+    ) : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, gear{std::move(gear)},
+        talents{std::move(talents)}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -80,9 +78,11 @@ public:
         result.append(",");
         result.append(std::to_string(guid));
         result.append(",");
-        result.append(std::to_string(unit_type));
-        result.append(",");
         result.append(std::to_string(state));
+        result.append(",");
+        result.append(gear.empty() ? "null" : "'" + gear + "'");
+        result.append(",");
+        result.append(talents.empty() ? "null" : "\"" + talents + "\"");
         result.append(",");
         result.append(std::to_string(timestamp));
         result.append(")");
@@ -198,53 +198,6 @@ public:
     }
 };
 
-class EncounterLogAttack
-{
-private:
-    std::uint_fast16_t map_id;
-    std::uint_fast16_t instance_id;
-    std::uint_fast32_t attacker_guid;
-    std::uint_fast32_t target_guid;
-    std::uint_fast32_t value;
-    std::uint_fast8_t result;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogAttack(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t attacker_guid,
-        std::uint_fast32_t target_guid,
-        std::uint_fast8_t result,
-        std::uint_fast64_t timestamp,
-        std::uint_fast32_t value = 0
-    ) : map_id{map_id}, instance_id{instance_id}, attacker_guid{attacker_guid}, target_guid{target_guid}, value{value},
-        result{result}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result_string{"("};
-
-        result_string.append(std::to_string(map_id));
-        result_string.append(",");
-        result_string.append(std::to_string(instance_id));
-        result_string.append(",");
-        result_string.append(std::to_string(attacker_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(target_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(value));
-        result_string.append(",");
-        result_string.append(std::to_string(result));
-        result_string.append(",");
-        result_string.append(std::to_string(timestamp));
-        result_string.append(")");
-
-        return result_string;
-    }
-};
-
 class EncounterLogMovement
 {
 private:
@@ -307,9 +260,6 @@ private:
     std::map<std::uint_fast32_t, EncounterLogAreaSpell> area_spell_buffer;
     std::atomic<std::uint_fast32_t> area_spell_first{1};
     std::atomic<std::uint_fast32_t> area_spell_last{1};
-    std::map<std::uint_fast32_t, EncounterLogAttack> attack_buffer;
-    std::atomic<std::uint_fast32_t> attack_first{1};
-    std::atomic<std::uint_fast32_t> attack_last{1};
     std::map<std::uint_fast32_t, EncounterLogMovement> movement_buffer;
     std::atomic<std::uint_fast32_t> movement_first{1};
     std::atomic<std::uint_fast32_t> movement_last{1};
@@ -319,8 +269,9 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
-        std::uint_fast8_t unit_type,
         std::uint_fast8_t state,
+        std::string gear,
+        std::string talents,
         std::uint_fast64_t timestamp
     )
     {
@@ -328,8 +279,9 @@ public:
             map_id,
             instance_id,
             guid,
-            unit_type,
             state,
+            std::move(gear),
+            std::move(talents),
             timestamp
         }});
 
@@ -491,64 +443,6 @@ public:
         return area_spell_buffer.size();
     }
 
-    std::uint_fast32_t pushAttack(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t attacker_guid,
-        std::uint_fast32_t target_guid,
-        std::uint_fast8_t result,
-        std::uint_fast64_t timestamp,
-        std::uint_fast32_t value = 0
-    )
-    {
-        attack_buffer.insert({attack_first, {
-            map_id,
-            instance_id,
-            attacker_guid,
-            target_guid,
-            result,
-            timestamp,
-            value
-        }});
-
-        attack_first++;
-
-        return attack_first;
-    }
-
-    [[nodiscard]] std::string retrieveAttacks(std::size_t count)
-    {
-        if (attack_buffer.empty()) {
-            return "";
-        }
-
-        count = std::min(count, attack_buffer.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(attack_buffer.at(attack_last).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            attack_buffer.erase(attack_last);
-            i++;
-            attack_last++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getAttackBufferSize()
-    {
-        return attack_buffer.size();
-    }
-
     std::uint_fast32_t pushMovement(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
@@ -643,7 +537,6 @@ public:
                 auto combat_buffer_size = m_buffer.getCombatBufferSize();
                 auto spell_buffer_size = m_buffer.getSpellBufferSize();
                 auto area_spell_buffer_size = m_buffer.getAreaSpellBufferSize();
-                auto attack_buffer_size = m_buffer.getAttackBufferSize();
                 auto movement_buffer_size = m_buffer.getMovementBufferSize();
 
                 std::uint_fast32_t combat_count{0};
@@ -659,7 +552,7 @@ public:
                 if (combat_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= combat_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, unit_type, state, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, timestamp) VALUES " +
                             m_buffer.retrieveCombats(combat_count)
                         );
                     }
@@ -699,25 +592,6 @@ public:
                         LoginDatabase.Execute(
                             "INSERT INTO encounter_log_area_spells (spell_id, caster_guid, target_guid, value, result, timestamp) VALUES " +
                             m_buffer.retrieveAreaSpells(area_spell_count)
-                        );
-                    }
-                }
-
-                std::uint_fast32_t attack_count{0};
-                std::uint_fast32_t attack_query_count{1};
-
-                if (attack_buffer_size < batch_size) {
-                    attack_count = attack_buffer_size;
-                } else {
-                    attack_count = batch_size;
-                    attack_query_count = attack_buffer_size % batch_size;
-                }
-
-                if (attack_count > 0) {
-                    for (std::uint_fast32_t i = 1; i <= attack_query_count; i++) {
-                        LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_attacks (map_id, instance_id, attacker_guid, target_guid, value, result, timestamp) VALUES " +
-                            m_buffer.retrieveAttacks(attack_count)
                         );
                     }
                 }
@@ -775,6 +649,11 @@ public:
     static EncounterLogs *getLog(std::uint_fast32_t instance_id)
     {
         return m_logs.at(instance_id).get();
+    }
+
+    static bool hasLog(std::uint_fast32_t instance_id)
+    {
+        return m_logs.contains(instance_id);
     }
 
     static bool dungeonsDisabled()

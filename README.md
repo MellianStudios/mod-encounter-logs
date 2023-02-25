@@ -18,11 +18,11 @@
 
 ### Requirements
 1. This module relies on hooks which are not present in AC
-- OnUnitSpellCast
-- OnAddHostileReferenceToThreatContainer
-- OnRemoveHostileReferenceFromThreatContainer
-
-you can get them here https://github.com/MellianStudios/azerothcore-wotlk/tree/hooks note that there are other hooks not required for this module
+   - OnUnitSpellCast
+   - OnAddHostileReferenceToThreatContainer
+   - OnRemoveHostileReferenceFromThreatContainer
+   - you can get them here https://github.com/MellianStudios/azerothcore-wotlk/tree/hooks note that there are other hooks not required for this module
+2. This module depends on nlhomann/json library which is not present in AC
 
 ### Credits / contributors
 - [Anchy](https://github.com/AnchyDev) (general support)

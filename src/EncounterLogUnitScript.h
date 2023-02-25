@@ -31,7 +31,6 @@ public:
         }
 
         auto current_time = std::chrono::system_clock::now();
-
         auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
 
         std::uint_fast32_t target_guid{0};
