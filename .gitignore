@@ -30,6 +30,9 @@ CMakeLists.txt.user
 nbproject/
 .sync.ffs_db
 *.kate-swp
+/.fleet
+/.idea
+/.vscode
 
 #
 # Eclipse
