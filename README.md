@@ -18,8 +18,11 @@ This means that this module is NOT recommended for basic users and requires dev 
 ### Tracking
 - when player enters combat this event itself is tracked together with player gear (including gems and enchants), talents and buffs/debuffs
 - players casting spells are tracked always
-- creature casting spells are tracked when in combat with player
 - player movement is tracked always
+- creature casting spells are tracked when in combat with player
+- creature movement is tracked when in combat with player
+
+Pets, summons and vehicles are tracked in same fashion in relation to whether they are owned by player or creature
 
 ---
 

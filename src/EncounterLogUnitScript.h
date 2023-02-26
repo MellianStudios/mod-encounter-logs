@@ -26,8 +26,24 @@ public:
             return;
         }
 
-        if (!caster->IsPlayer() || !caster->IsInCombat()) {
-            return;
+        if (!caster->IsPlayer() && !caster->IsCreatedByPlayer()) {
+            if (!caster->IsInCombat()) {
+                return;
+            }
+
+            bool in_combat_with_player{false};
+
+            for (auto hostile: caster->GetThreatMgr().GetThreatList()) {
+                if (hostile->GetVictim()->IsPlayer() || hostile->GetVictim()->IsCreatedByPlayer()) {
+                    in_combat_with_player = true;
+
+                    break;
+                }
+            }
+
+            if (!in_combat_with_player) {
+                return;
+            }
         }
 
         auto current_time = std::chrono::system_clock::now();
@@ -43,34 +59,33 @@ public:
         }
 
         if (spell->GetUniqueTargetInfo()->empty()) {
-
         } else if (spell->GetUniqueTargetInfo()->size() == 1) {
             for (auto &hit: *spell->GetUniqueTargetInfo()) {
                 value = hit.damage;
             }
         } else {
             for (auto &hit: *spell->GetUniqueTargetInfo()) {
-                EncounterLogManager::getLog(caster->GetInstanceId())->getBuffer().pushAreaSpell(
-                    spell->m_spellInfo->Id,
-                    caster->IsPlayer() ? caster->GetGUID().GetRawValue() : caster->ToCreature()->GetSpawnId(),
-                    hit.targetGUID.GetRawValue(),
-                    hit.crit ? ENCOUNTER_LOG_SPELL_RESULT_CRIT : (hit.reflectResult + 1),
-                    timestamp,
-                    hit.damage
-                );
+//                EncounterLogManager::getLog(caster->GetInstanceId())->getBuffer().pushAreaSpell(
+//                    spell->m_spellInfo->Id,
+//                    caster->IsPlayer() ? caster->GetGUID().GetRawValue() : caster->ToCreature()->GetSpawnId(),
+//                    hit.targetGUID.GetRawValue(),
+//                    hit.crit ? ENCOUNTER_LOG_SPELL_RESULT_CRIT : (hit.reflectResult + 1),
+//                    timestamp,
+//                    hit.damage
+//                );
             }
         }
 
-        EncounterLogManager::getLog(caster->GetInstanceId())->getBuffer().pushSpell(
-            caster->GetMapId(),
-            caster->GetInstanceId(),
-            spell->m_spellInfo->Id,
-            caster->IsPlayer() ? caster->GetGUID().GetRawValue() : caster->ToCreature()->GetSpawnId(),
-            timestamp,
-            target_guid,
-            spell->GetPowerCost(),
-            value
-        );
+//        EncounterLogManager::getLog(caster->GetInstanceId())->getBuffer().pushSpell(
+//            caster->GetMapId(),
+//            caster->GetInstanceId(),
+//            spell->m_spellInfo->Id,
+//            caster->IsPlayer() ? caster->GetGUID().GetRawValue() : caster->ToCreature()->GetSpawnId(),
+//            timestamp,
+//            target_guid,
+//            spell->GetPowerCost(),
+//            value
+//        );
     }
 };
 

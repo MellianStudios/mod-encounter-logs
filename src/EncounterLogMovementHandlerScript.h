@@ -30,7 +30,9 @@ public:
         EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushMovement(
             player->GetMapId(),
             player->GetInstanceId(),
+            0,
             player->GetGUID().GetRawValue(),
+            ENCOUNTER_LOG_PLAYER,
             player->PositionXYZOStream().m_pos->m_positionX,
             player->PositionXYZOStream().m_pos->m_positionY,
             player->PositionXYZOStream().m_pos->m_positionZ,

@@ -25,6 +25,10 @@ enum EncounterLogUnitType
 {
     ENCOUNTER_LOG_PLAYER = 1,
     ENCOUNTER_LOG_CREATURE = 2,
+    ENCOUNTER_LOG_PET = 3,
+    ENCOUNTER_LOG_TOTEM = 4,
+    ENCOUNTER_LOG_SUMMON = 5,
+    ENCOUNTER_LOG_VEHICLE = 6,
 };
 
 enum EncounterLogSpellResult
@@ -97,8 +101,12 @@ private:
     std::uint_fast16_t map_id;
     std::uint_fast16_t instance_id;
     std::uint_fast32_t spell_id;
+    std::uint_fast32_t caster_owner_guid;
     std::uint_fast32_t caster_guid;
+    std::uint_fast8_t caster_type;
+    std::uint_fast32_t target_owner_guid;
     std::uint_fast32_t target_guid;
+    std::uint_fast8_t target_type;
     std::uint_fast32_t cost;
     std::uint_fast32_t value;
     std::uint_fast8_t result;
@@ -110,16 +118,21 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
+        std::uint_fast32_t caster_owner_guid,
         std::uint_fast32_t caster_guid,
+        std::uint_fast8_t caster_type,
+        std::uint_fast32_t target_owner_guid,
+        std::uint_fast32_t target_guid,
+        std::uint_fast8_t target_type,
+        std::uint_fast32_t cost,
+        std::uint_fast32_t value,
+        std::uint_fast8_t result,
         std::uint_fast64_t timestamp,
-        std::uint_fast32_t target_guid = 0,
-        std::uint_fast32_t cost = 0,
-        std::uint_fast32_t value = 0,
-        std::uint_fast8_t result = 1,
-        bool value_not_present = false
-    ) : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_guid{caster_guid},
-        target_guid{target_guid}, cost{cost}, value{value}, result{result}, timestamp{timestamp},
-        value_not_present{value_not_present}
+        bool value_not_present
+    ) : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
+        caster_guid{caster_guid}, caster_type{caster_type}, target_owner_guid{target_owner_guid},
+        target_guid{target_guid}, target_type{target_type}, cost{cost}, value{value}, result{result},
+        timestamp{timestamp}, value_not_present{value_not_present}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -132,19 +145,21 @@ public:
         result_string.append(",");
         result_string.append(std::to_string(spell_id));
         result_string.append(",");
+        result_string.append(caster_owner_guid == 0 ? "null" : std::to_string(caster_owner_guid));
+        result_string.append(",");
         result_string.append(std::to_string(caster_guid));
         result_string.append(",");
-        result_string.append(std::to_string(target_guid));
+        result_string.append(std::to_string(caster_type));
+        result_string.append(",");
+        result_string.append(target_owner_guid == 0 ? "null" : std::to_string(target_owner_guid));
+        result_string.append(",");
+        result_string.append(target_guid == 0 ? "null" : std::to_string(target_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(target_type));
         result_string.append(",");
         result_string.append(std::to_string(cost));
         result_string.append(",");
-
-        if (value_not_present) {
-            result_string.append("null");
-        } else {
-            result_string.append(std::to_string(value));
-        }
-
+        result_string.append(value_not_present ? "null" : std::to_string(value));
         result_string.append(",");
         result_string.append(std::to_string(result));
         result_string.append(",");
@@ -159,8 +174,12 @@ class EncounterLogAreaSpell
 {
 private:
     std::uint_fast32_t spell_id;
+    std::uint_fast32_t caster_owner_guid;
     std::uint_fast32_t caster_guid;
+    std::uint_fast8_t caster_type;
+    std::uint_fast32_t target_owner_guid;
     std::uint_fast32_t target_guid;
+    std::uint_fast8_t target_type;
     std::uint_fast32_t value;
     std::uint_fast8_t result;
     std::uint_fast64_t timestamp;
@@ -168,13 +187,18 @@ private:
 public:
     EncounterLogAreaSpell(
         std::uint_fast32_t spell_id,
+        std::uint_fast32_t caster_owner_guid,
         std::uint_fast32_t caster_guid,
+        std::uint_fast8_t caster_type,
+        std::uint_fast32_t target_owner_guid,
         std::uint_fast32_t target_guid,
+        std::uint_fast8_t target_type,
+        std::uint_fast32_t value,
         std::uint_fast8_t result,
-        std::uint_fast64_t timestamp,
-        std::uint_fast32_t value = 0
-    ) : spell_id{spell_id}, caster_guid{caster_guid}, target_guid{target_guid}, value{value}, result{result},
-        timestamp{timestamp}
+        std::uint_fast64_t timestamp
+    ) : spell_id{spell_id}, caster_owner_guid{caster_owner_guid}, caster_guid{caster_guid}, caster_type{caster_type},
+        target_owner_guid{target_owner_guid}, target_guid{target_guid}, target_type{target_type}, value{value},
+        result{result}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -183,9 +207,17 @@ public:
 
         result_string.append(std::to_string(spell_id));
         result_string.append(",");
+        result_string.append(caster_owner_guid == 0 ? "null" : std::to_string(caster_owner_guid));
+        result_string.append(",");
         result_string.append(std::to_string(caster_guid));
         result_string.append(",");
+        result_string.append(std::to_string(caster_type));
+        result_string.append(",");
+        result_string.append(target_owner_guid == 0 ? "null" : std::to_string(target_owner_guid));
+        result_string.append(",");
         result_string.append(std::to_string(target_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(target_type));
         result_string.append(",");
         result_string.append(std::to_string(value));
         result_string.append(",");
@@ -203,7 +235,9 @@ class EncounterLogMovement
 private:
     std::uint_fast16_t map_id;
     std::uint_fast16_t instance_id;
+    std::uint_fast32_t owner_guid;
     std::uint_fast32_t guid;
+    std::uint_fast8_t type;
     double x;
     double y;
     double z;
@@ -214,13 +248,16 @@ public:
     EncounterLogMovement(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
         std::uint_fast32_t guid,
+        std::uint_fast8_t type,
         double x,
         double y,
         double z,
         double o,
         std::uint_fast64_t timestamp
-    ) : map_id{map_id}, instance_id{instance_id}, guid{guid}, x{x}, y{y}, z{z}, o{o}, timestamp{timestamp}
+    ) : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, guid{guid}, type{type}, x{x}, y{y}, z{z},
+        o{o}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -231,7 +268,11 @@ public:
         result_string.append(",");
         result_string.append(std::to_string(instance_id));
         result_string.append(",");
+        result_string.append(owner_guid == 0 ? "null" : std::to_string(owner_guid));
+        result_string.append(",");
         result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(type));
         result_string.append(",");
         result_string.append(std::to_string(x));
         result_string.append(",");
@@ -327,25 +368,33 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
+        std::uint_fast32_t caster_owner_guid,
         std::uint_fast32_t caster_guid,
+        std::uint_fast8_t caster_type,
+        std::uint_fast32_t target_owner_guid,
+        std::uint_fast32_t target_guid,
+        std::uint_fast8_t target_type,
+        std::uint_fast32_t cost,
+        std::uint_fast32_t value,
+        std::uint_fast8_t result,
         std::uint_fast64_t timestamp,
-        std::uint_fast32_t target_guid = 0,
-        std::uint_fast32_t cost = 0,
-        std::uint_fast32_t value = 0,
-        std::uint_fast8_t result = 1,
-        bool value_not_present = false
+        bool value_not_present
     )
     {
         spell_buffer.insert({spell_first, {
             map_id,
             instance_id,
             spell_id,
+            caster_owner_guid,
             caster_guid,
-            timestamp,
+            caster_type,
+            target_owner_guid,
             target_guid,
+            target_type,
             cost,
             value,
             result,
+            timestamp,
             value_not_present
         }});
 
@@ -389,20 +438,28 @@ public:
 
     std::uint_fast32_t pushAreaSpell(
         std::uint_fast32_t spell_id,
+        std::uint_fast32_t caster_owner_guid,
         std::uint_fast32_t caster_guid,
+        std::uint_fast8_t caster_type,
+        std::uint_fast32_t target_owner_guid,
         std::uint_fast32_t target_guid,
+        std::uint_fast8_t target_type,
+        std::uint_fast32_t value,
         std::uint_fast8_t result,
-        std::uint_fast64_t timestamp,
-        std::uint_fast32_t value = 0
+        std::uint_fast64_t timestamp
     )
     {
         area_spell_buffer.insert({area_spell_first, {
             spell_id,
+            caster_owner_guid,
             caster_guid,
+            caster_type,
+            target_owner_guid,
             target_guid,
+            target_type,
+            value,
             result,
-            timestamp,
-            value
+            timestamp
         }});
 
         area_spell_first++;
@@ -446,7 +503,9 @@ public:
     std::uint_fast32_t pushMovement(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
         std::uint_fast32_t guid,
+        std::uint_fast8_t type,
         double x,
         double y,
         double z,
@@ -457,7 +516,9 @@ public:
         movement_buffer.insert({movement_first, {
             map_id,
             instance_id,
+            owner_guid,
             guid,
+            type,
             x,
             y,
             z,
@@ -571,7 +632,7 @@ public:
                 if (spell_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_guid, target_guid, cost, value, result, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, cost, value, result, timestamp) VALUES " +
                             m_buffer.retrieveSpells(spell_count)
                         );
                     }
@@ -590,7 +651,7 @@ public:
                 if (area_spell_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= area_spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_area_spells (spell_id, caster_guid, target_guid, value, result, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_area_spells (spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, value, result, timestamp) VALUES " +
                             m_buffer.retrieveAreaSpells(area_spell_count)
                         );
                     }
@@ -609,7 +670,7 @@ public:
                 if (movement_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= movement_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_movements (map_id, instance_id, guid, x, y, z, o, `timestamp`) VALUES " +
+                            "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, guid, type, x, y, z, o, `timestamp`) VALUES " +
                             m_buffer.retrieveMovements(movement_count)
                         );
                     }
