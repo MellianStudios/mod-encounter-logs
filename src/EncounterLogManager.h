@@ -82,7 +82,7 @@ public:
         result.append(",");
         result.append(gear.empty() ? "null" : "'" + gear + "'");
         result.append(",");
-        result.append(talents.empty() ? "null" : "\"" + talents + "\"");
+        result.append(talents.empty() ? "null" : "'" + talents + "'");
         result.append(",");
         result.append(std::to_string(timestamp));
         result.append(")");
