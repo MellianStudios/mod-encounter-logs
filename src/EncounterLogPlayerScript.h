@@ -16,11 +16,24 @@ public:
 
     void OnPlayerEnterCombat(Player *player, Unit */*enemy*/) override
     {
+        if (player->GetMap()->IsDungeon() && EncounterLogManager::dungeonsDisabled()) {
+            return;
+        }
+
+        if (player->GetMap()->IsRaid() && EncounterLogManager::raidsDisabled()) {
+            return;
+        }
+
+        if (!player->GetMap()->IsDungeon() && !player->GetMap()->IsRaid()) {
+            return;
+        }
+
         auto current_time = std::chrono::system_clock::now();
         auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
 
         nlohmann::json gear = nlohmann::json::object();
         nlohmann::json talents = nlohmann::json::object();
+        nlohmann::json auras = nlohmann::json::array();
 
         for (int i = 0; i <= 18; i++) {
             Item *item = player->GetItemByPos(255, i);
@@ -71,12 +84,12 @@ public:
             }
 
             gear[std::to_string(i)] = {
-                {"id",      item_id},
-                {"gems",    gems},
-                {"enchant", {
-                                {"main", enchant},
-                                {"bonus", bonus_enchant}
-                            }}
+                {"i", item_id},
+                {"g", gems},
+                {"e", {
+                    {"m", enchant},
+                    {"b", bonus_enchant}
+                }}
             };
         }
 
@@ -96,6 +109,20 @@ public:
             }
         }
 
+        for (auto &[id, aura]: player->GetAppliedAuras()) {
+            if (player->GetTalentMap().contains(aura->GetBase()->GetId())) {
+                continue;
+            }
+
+            auras.push_back(
+                {
+                    {"i", aura->GetBase()->GetId()},
+                    {"p", aura->IsPositive() ? 1 : 0},
+                    {"d", aura->GetBase()->GetDuration()}
+                }
+            );
+        }
+
         EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushCombat(
             player->GetMapId(),
             player->GetInstanceId(),
@@ -103,6 +130,7 @@ public:
             ENCOUNTER_LOG_START,
             gear.dump(),
             talents.dump(),
+            auras.dump(),
             timestamp
         );
     }
@@ -122,6 +150,7 @@ public:
             player->GetInstanceId(),
             player->GetGUID().GetRawValue(),
             ENCOUNTER_LOG_END,
+            "",
             "",
             "",
             timestamp

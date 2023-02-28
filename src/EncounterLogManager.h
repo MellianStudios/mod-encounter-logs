@@ -8,6 +8,13 @@
 
 // Note that these data types here are irrelevant since on most of modern computers all of them will be implemented as "long"
 
+enum EncounterLogDebugValues
+{
+    ENCOUNTER_LOG_DEBUG_TYPE = 0,
+    ENCOUNTER_LOG_DEBUG_RESULT = 255,
+    ENCOUNTER_LOG_DEBUG_GUID = 123456789,
+};
+
 enum EncounterLogScope
 {
     ENCOUNTER_LOG_DUNGEON = 1,
@@ -34,7 +41,7 @@ enum EncounterLogUnitType
 enum EncounterLogSpellResult
 {
     ENCOUNTER_LOG_SPELL_RESULT_EMPTY = 0,
-    ENCOUNTER_LOG_SPELL_RESULT_NONE = 1,
+    ENCOUNTER_LOG_SPELL_RESULT_NONE = 1, // hit
     ENCOUNTER_LOG_SPELL_RESULT_MISS = 2,
     ENCOUNTER_LOG_SPELL_RESULT_RESIST = 3,
     ENCOUNTER_LOG_SPELL_RESULT_DODGE = 4,
@@ -57,6 +64,7 @@ private:
     std::uint_fast8_t state;
     std::string gear;
     std::string talents;
+    std::string auras;
     std::uint_fast64_t timestamp;
 
 public:
@@ -67,9 +75,10 @@ public:
         std::uint_fast8_t state,
         std::string gear,
         std::string talents,
+        std::string auras,
         std::uint_fast64_t timestamp
     ) : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, gear{std::move(gear)},
-        talents{std::move(talents)}, timestamp{timestamp}
+        talents{std::move(talents)}, auras{std::move(auras)}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -87,6 +96,8 @@ public:
         result.append(gear.empty() ? "null" : "'" + gear + "'");
         result.append(",");
         result.append(talents.empty() ? "null" : "'" + talents + "'");
+        result.append(",");
+        result.append(auras.empty() ? "null" : "'" + auras + "'");
         result.append(",");
         result.append(std::to_string(timestamp));
         result.append(")");
@@ -313,6 +324,7 @@ public:
         std::uint_fast8_t state,
         std::string gear,
         std::string talents,
+        std::string auras,
         std::uint_fast64_t timestamp
     )
     {
@@ -323,6 +335,7 @@ public:
             state,
             std::move(gear),
             std::move(talents),
+            std::move(auras),
             timestamp
         }});
 
@@ -613,7 +626,7 @@ public:
                 if (combat_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= combat_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, auras, timestamp) VALUES " +
                             m_buffer.retrieveCombats(combat_count)
                         );
                     }

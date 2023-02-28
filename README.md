@@ -28,6 +28,7 @@ Pets, summons and vehicles are tracked in same fashion in relation to whether th
 
 ### Expectation and assumptions
 - this module assumes you did not change default logic of gems and enchants
+- this module assumes companions cannot own companions
 
 ---
 
