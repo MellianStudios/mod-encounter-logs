@@ -2,10 +2,8 @@
 #define AZEROTHCORE_ENCOUNTERLOGPLAYERSCRIPT_H
 
 #include <nlohmann/json.hpp>
-#include "Configuration/Config.h"
-#include "Chat.h"
+#include "EncounterLogManager.h"
 #include "Player.h"
-#include "Spell.h"
 #include "ScriptMgr.h"
 
 class EncounterLogPlayerScript : public PlayerScript
@@ -16,20 +14,11 @@ public:
 
     void OnPlayerEnterCombat(Player *player, Unit */*enemy*/) override
     {
-        if (player->GetMap()->IsDungeon() && EncounterLogManager::dungeonsDisabled()) {
+        if (EncounterLogHelpers::shouldNotBeTracked(player->ToUnit())) {
             return;
         }
 
-        if (player->GetMap()->IsRaid() && EncounterLogManager::raidsDisabled()) {
-            return;
-        }
-
-        if (!player->GetMap()->IsDungeon() && !player->GetMap()->IsRaid()) {
-            return;
-        }
-
-        auto current_time = std::chrono::system_clock::now();
-        auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+        EncounterLogManager::registerPlayerCombat(player);
 
         nlohmann::json gear = nlohmann::json::object();
         nlohmann::json talents = nlohmann::json::object();
@@ -93,7 +82,7 @@ public:
             };
         }
 
-        for (const auto &[key, talent]: player->GetTalentMap()) {
+        for (const auto &[id, talent]: player->GetTalentMap()) {
             TalentEntry const *talent_entry = sTalentStore.LookupEntry(talent->talentID);
 
             for (std::uint_fast8_t rank = 0; rank < MAX_TALENT_RANK; ++rank) {
@@ -131,19 +120,17 @@ public:
             gear.dump(),
             talents.dump(),
             auras.dump(),
-            timestamp
+            EncounterLogHelpers::getTimestamp()
         );
     }
 
     void OnPlayerLeaveCombat(Player *player) override
     {
-        auto current_time = std::chrono::system_clock::now();
-        auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
-
-        // this is being run before AllMapScript::OnPlayerEnterAll
-        if (!EncounterLogManager::hasLog(player->GetInstanceId())) {
+        if (EncounterLogManager::playerNotInCombat(player)) {
             return;
         }
+
+        EncounterLogManager::deletePlayerCombat(player);
 
         EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushCombat(
             player->GetMapId(),
@@ -153,7 +140,32 @@ public:
             "",
             "",
             "",
-            timestamp
+            EncounterLogHelpers::getTimestamp()
+        );
+    }
+
+    void OnEnvironmentalDamage(Player *player, EnviromentalDamage type, uint32 damage) override
+    {
+        if (EncounterLogHelpers::shouldNotBeTracked(player->ToUnit())) {
+            return;
+        }
+
+        EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushSpell(
+            player->GetMapId(),
+            player->GetInstanceId(),
+            0,
+            0,
+            player->GetGUID().GetCounter(),
+            ENCOUNTER_LOG_PLAYER,
+            0,
+            player->GetGUID().GetCounter(),
+            ENCOUNTER_LOG_PLAYER,
+            0,
+            damage,
+            ENCOUNTER_LOG_SPELL_RESULT_EMPTY,
+            EncounterLogHelpers::getTimestamp(),
+            false,
+            ENCOUNTER_LOG_ARBITRARY_FLAG_ENVIRONMENTAL
         );
     }
 };

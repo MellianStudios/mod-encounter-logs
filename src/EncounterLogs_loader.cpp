@@ -1,8 +1,9 @@
-#include "EncounterLogManager.h"
-#include "EncounterLogAllMapScript.h"
+#include "EncounterLogGlobalScript.h"
+#include "EncounterLogMiscScript.h"
 #include "EncounterLogMovementHandlerScript.h"
 #include "EncounterLogPlayerScript.h"
 #include "EncounterLogUnitScript.h"
+#include "EncounterLogWorldScript.h"
 
 void Addmod_encounter_logsScripts()
 {
@@ -12,8 +13,10 @@ void Addmod_encounter_logsScripts()
         return;
     }
 
+    new EncounterLogGlobalScript();
+    new EncounterLogMiscScript();
     new EncounterLogMovementHandlerScript();
-    new EncounterLogAllMapScript();
     new EncounterLogPlayerScript();
     new EncounterLogUnitScript();
+    new EncounterLogWorldScript();
 }

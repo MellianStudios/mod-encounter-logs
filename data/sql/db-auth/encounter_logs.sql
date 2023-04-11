@@ -36,6 +36,7 @@ CREATE TABLE `encounter_log_spells`
     `cost`              INT UNSIGNED,
     `value`             INT,
     `result`            TINYINT UNSIGNED,
+    `flag`              TINYINT UNSIGNED,
     `timestamp`         BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;

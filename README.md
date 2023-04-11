@@ -1,6 +1,3 @@
-# DO NOT USE THIS IF YOU ARE AVERAGE USER
-## This module is in active development and is not intended for real usage yet
-
 # Encounter logs
 
 ### Currently works only in instances (dungeons/raids) and (NYI) for selected creatures in open world
@@ -8,10 +5,9 @@
 ---
 
 ## Important info
-This module is logging raw data in structure which is not intended to be read from.
-This module does not provide parser nor viewer/reader this is because every project has its requirements and necessities
-and it would be too much work for me to maintain something what most users including me would never use.
-This means that this module is NOT recommended for basic users and requires dev skills to fully utilize.
+- This module logs raw data in a format that isn't designed for direct reading.
+- This module doesn't include a parser or a viewer/reader, as each project has its own specific requirements and needs. It would be too much effort to maintain a feature that most users, including myself, would rarely use. As a result, this module is not recommended for basic users and requires development skills for full utilization.
+- This module has the potential to generate vast amounts of data in the database, particularly for servers with a higher population. This can put significant strain on your database, storage, CPU, and network.
 
 ---
 
@@ -27,17 +23,15 @@ Pets, summons and vehicles are tracked in same fashion in relation to whether th
 ---
 
 ### Expectation and assumptions
-- this module assumes you did not change default logic of gems and enchants
-- this module assumes companions cannot own companions
+- this module assumes you did not change default logic of item enchantments
 
 ---
 
 ### Requirements
 1. This module relies on hook which are not present in AC
-   - OnUnitSpellCast
-   - you can get it here https://github.com/MellianStudios/azerothcore-wotlk/tree/hooks note that there are other hooks not required for this module
 2. This module depends on nlhomann/json library which is not present in AC
 
+> you can find library integration and hooks here https://github.com/MellianStudios/azerothcore-wotlk/tree/encounter-logs
 ---
 
 ### Credits / contributors

@@ -2,9 +2,17 @@
 #define AZEROTHCORE_ENCOUNTERLOGMANAGER_H
 
 #include <utility>
+#include "Chat.h"
 #include "Configuration/Config.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
+#include "Pet.h"
+#include "ScriptMgr.h"
+#include "Spell.h"
+#include "SpellAuraEffects.h"
+#include "TemporarySummon.h"
+#include "Totem.h"
+#include "Unit.h"
 
 // Note that these data types here are irrelevant since on most of modern computers all of them will be implemented as "long"
 
@@ -36,6 +44,7 @@ enum EncounterLogUnitType
     ENCOUNTER_LOG_TOTEM = 4,
     ENCOUNTER_LOG_SUMMON = 5,
     ENCOUNTER_LOG_VEHICLE = 6,
+    ENCOUNTER_LOG_OBJECT = 7,
 };
 
 enum EncounterLogSpellResult
@@ -53,6 +62,20 @@ enum EncounterLogSpellResult
     ENCOUNTER_LOG_SPELL_RESULT_ABSORB = 10,
     ENCOUNTER_LOG_SPELL_RESULT_REFLECT = 11,
     ENCOUNTER_LOG_SPELL_RESULT_CRIT = 12,
+    ENCOUNTER_LOG_SPELL_RESULT_GLANCING = 13,
+    ENCOUNTER_LOG_SPELL_RESULT_CRUSHING = 14,
+};
+
+enum EncounterLogArbitraryFlag
+{
+    ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY = 0,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_AURA_APPLY = 1,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_AURA_REMOVE = 2,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_ENVIRONMENTAL = 3,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_BASE_ATTACK = 4,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_OFF_ATTACK = 5,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_RANGED_ATTACK = 6,
+    ENCOUNTER_LOG_ARBITRARY_FLAG_MAX_ATTACK = 7,
 };
 
 class EncounterLogCombat
@@ -123,6 +146,7 @@ private:
     std::uint_fast8_t result;
     std::uint_fast64_t timestamp;
     bool value_not_present;
+    EncounterLogArbitraryFlag flag;
 
 public:
     EncounterLogSpell(
@@ -139,11 +163,12 @@ public:
         std::uint_fast32_t value,
         std::uint_fast8_t result,
         std::uint_fast64_t timestamp,
-        bool value_not_present
+        bool value_not_present,
+        EncounterLogArbitraryFlag flag
     ) : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
         caster_guid{caster_guid}, caster_type{caster_type}, target_owner_guid{target_owner_guid},
         target_guid{target_guid}, target_type{target_type}, cost{cost}, value{value}, result{result},
-        timestamp{timestamp}, value_not_present{value_not_present}
+        timestamp{timestamp}, value_not_present{value_not_present}, flag{flag}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -173,6 +198,8 @@ public:
         result_string.append(value_not_present ? "null" : std::to_string(value));
         result_string.append(",");
         result_string.append(std::to_string(result));
+        result_string.append(",");
+        result_string.append(std::to_string(flag));
         result_string.append(",");
         result_string.append(std::to_string(timestamp));
         result_string.append(")");
@@ -391,7 +418,8 @@ public:
         std::uint_fast32_t value,
         std::uint_fast8_t result,
         std::uint_fast64_t timestamp,
-        bool value_not_present
+        bool value_not_present,
+        EncounterLogArbitraryFlag flag
     )
     {
         spell_buffer.insert({spell_first, {
@@ -408,7 +436,8 @@ public:
             value,
             result,
             timestamp,
-            value_not_present
+            value_not_present,
+            flag
         }});
 
         spell_first++;
@@ -589,14 +618,20 @@ private:
     Circumrota m_buffer;
 
 public:
-    EncounterLogs(std::uint_fast32_t map_id, std::uint_fast32_t instance_id, std::uint_fast32_t timestamp)
-        : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
+    EncounterLogs(
+        std::uint_fast32_t map_id,
+        std::uint_fast32_t instance_id,
+        std::uint_fast32_t timestamp,
+        bool with_record = true
+    ) : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
     {
-        LoginDatabase.Execute(
-            "INSERT INTO encounter_logs (map_id, instance_id, timestamp) VALUES (" +
-            std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_timestamp) +
-            ")"
-        );
+        if (with_record) {
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_logs (map_id, instance_id, timestamp) VALUES (" +
+                std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_timestamp) +
+                ")"
+            );
+        }
 
         m_saver = std::thread([&]() {
             while (!m_stop_saver) {
@@ -645,7 +680,7 @@ public:
                 if (spell_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, cost, value, result, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, cost, value, result, flag, timestamp) VALUES " +
                             m_buffer.retrieveSpells(spell_count)
                         );
                     }
@@ -705,22 +740,155 @@ public:
     }
 };
 
+class EncounterLogHelpers
+{
+public:
+    [[nodiscard]] static std::uint_fast32_t getGuid(Unit *unit)
+    {
+        if (Creature *creature = unit->ToCreature()) {
+            return creature->GetSpawnId();
+        }
+
+        return unit->GetGUID().GetCounter();
+    }
+
+    [[nodiscard]] static bool isNotEngagedWithPlayer(Unit *unit)
+    {
+        if (unit->IsPlayer()) {
+            return false;
+        }
+
+        return std::ranges::none_of(unit->GetThreatMgr().GetThreatList(), [](HostileReference *ref) {
+            return getOwnerRecursively(ref->GetVictim())->IsPlayer();
+        });
+    }
+
+    [[nodiscard]] static Unit *getOwnerRecursively(Unit *unit)
+    {
+        if (Unit *owner = unit->GetOwner()) {
+            return getOwnerRecursively(owner);
+        }
+
+        return unit;
+    }
+
+    [[nodiscard]] static EncounterLogUnitType getUnitType(Unit *unit)
+    {
+        if (unit->IsPlayer()) {
+            return ENCOUNTER_LOG_PLAYER;
+        }
+
+        if (unit->IsPet() || unit->IsHunterPet()) {
+            return ENCOUNTER_LOG_PET;
+        }
+
+        if (unit->IsTotem()) {
+            return ENCOUNTER_LOG_TOTEM;
+        }
+
+        if (unit->IsSummon()) {
+            return ENCOUNTER_LOG_SUMMON;
+        }
+
+        if (unit->IsVehicle()) {
+            return ENCOUNTER_LOG_VEHICLE;
+        }
+
+        if (unit->IsWorldObject()) {
+            return ENCOUNTER_LOG_OBJECT;
+        }
+
+        return ENCOUNTER_LOG_CREATURE;
+    }
+
+    [[nodiscard]] static std::uint_fast32_t getTimestamp()
+    {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+    }
+
+    [[nodiscard]] static EncounterLogSpellResult getMeleeResult(MeleeHitOutcome result)
+    {
+        switch (result) {
+            case MELEE_HIT_EVADE:
+                return ENCOUNTER_LOG_SPELL_RESULT_EVADE;
+            case MELEE_HIT_MISS:
+                return ENCOUNTER_LOG_SPELL_RESULT_MISS;
+            case MELEE_HIT_DODGE:
+                return ENCOUNTER_LOG_SPELL_RESULT_DODGE;
+            case MELEE_HIT_BLOCK:
+                return ENCOUNTER_LOG_SPELL_RESULT_BLOCK;
+            case MELEE_HIT_PARRY:
+                return ENCOUNTER_LOG_SPELL_RESULT_PARRY;
+            case MELEE_HIT_GLANCING:
+                return ENCOUNTER_LOG_SPELL_RESULT_GLANCING;
+            case MELEE_HIT_CRIT:
+                return ENCOUNTER_LOG_SPELL_RESULT_CRIT;
+            case MELEE_HIT_CRUSHING:
+                return ENCOUNTER_LOG_SPELL_RESULT_CRUSHING;
+            case MELEE_HIT_NORMAL:
+                return ENCOUNTER_LOG_SPELL_RESULT_NONE;
+        }
+    }
+
+    [[nodiscard]] static EncounterLogArbitraryFlag getMeleeFlag(WeaponAttackType type)
+    {
+        switch (type) {
+            case BASE_ATTACK:
+                return ENCOUNTER_LOG_ARBITRARY_FLAG_BASE_ATTACK;
+            case OFF_ATTACK:
+                return ENCOUNTER_LOG_ARBITRARY_FLAG_OFF_ATTACK;
+            case RANGED_ATTACK:
+                return ENCOUNTER_LOG_ARBITRARY_FLAG_RANGED_ATTACK;
+            case MAX_ATTACK:
+                return ENCOUNTER_LOG_ARBITRARY_FLAG_MAX_ATTACK;
+        }
+    }
+
+    [[nodiscard]] static inline bool shouldNotBeTracked(Unit *unit);
+};
+
 class EncounterLogManager
 {
 private:
     static std::unordered_map<std::uint_fast32_t, std::unique_ptr<EncounterLogs>> m_logs;
+    static std::unordered_map<std::uint_fast32_t, bool> m_players_in_combat;
 
 public:
-    static void newLog(std::uint_fast32_t map_id, std::uint_fast32_t instance_id, std::uint_fast32_t timestamp)
+    static void init()
+    {
+        QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance");
+
+        if (instances) {
+            do {
+                Field *instance = instances->Fetch();
+
+                newLog(
+                    instance[1].Get<std::uint_fast32_t>(),
+                    instance[0].Get<std::uint_fast32_t>(),
+                    0,
+                    false
+                );
+            } while (instances->NextRow());
+        }
+    }
+
+    static void newLog(
+        std::uint_fast32_t map_id,
+        std::uint_fast32_t instance_id,
+        std::uint_fast32_t timestamp,
+        bool with_record = true
+    )
     {
         if (m_logs.contains(instance_id)) {
             return;
         }
 
-        m_logs.insert({instance_id, std::make_unique<EncounterLogs>(map_id, instance_id, timestamp)});
+        m_logs.insert({instance_id, std::make_unique<EncounterLogs>(map_id, instance_id, timestamp, with_record)});
     }
 
-    static EncounterLogs *getLog(std::uint_fast32_t instance_id)
+    [[nodiscard]] static EncounterLogs *getLog(std::uint_fast32_t instance_id)
     {
         return m_logs.at(instance_id).get();
     }
@@ -730,19 +898,86 @@ public:
         return m_logs.contains(instance_id);
     }
 
-    static bool dungeonsDisabled()
+    [[nodiscard]] static bool dungeonsDisabled()
     {
         auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
 
         return scope != ENCOUNTER_LOG_EVERYTHING && scope != ENCOUNTER_LOG_DUNGEON;
     }
 
-    static bool raidsDisabled()
+    [[nodiscard]] static bool raidsDisabled()
     {
         auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
 
         return scope != ENCOUNTER_LOG_EVERYTHING && scope != ENCOUNTER_LOG_RAID;
     }
+
+    [[nodiscard]] static bool creatureIsTracked(Unit *unit)
+    {
+        auto config = sConfigMgr->GetOption<std::string>("EncounterLogs.Logging.OpenWorld", "");
+
+        if (config.empty()) {
+            return false;
+        }
+
+        std::map<std::uint_fast32_t, bool> creatures;
+
+        const char *delimiter_c = ";";
+
+        char *argument = std::strtok((char *) config.c_str(), ";");
+
+        while (argument) {
+            creatures.insert({std::stoi(argument), true});
+
+            argument = std::strtok(nullptr, delimiter_c);
+        }
+
+        if (creatures.count(EncounterLogHelpers::getGuid(unit))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    static void registerPlayerCombat(Player *player)
+    {
+        m_players_in_combat.insert({player->GetGUID().GetCounter(), true});
+    }
+
+    static void deletePlayerCombat(Player *player)
+    {
+        m_players_in_combat.erase(player->GetGUID().GetCounter());
+    }
+
+    [[nodiscard]] static bool playerNotInCombat(Player *player)
+    {
+        return m_players_in_combat.contains(player->GetGUID().GetCounter());
+    }
 };
+
+inline bool EncounterLogHelpers::shouldNotBeTracked(Unit *unit)
+{
+    if (!unit->GetMap()->IsDungeon() && !EncounterLogManager::creatureIsTracked(unit)) {
+        return true;
+    }
+
+    if (unit->GetMap()->IsRaid() && EncounterLogManager::raidsDisabled()) {
+        return true;
+    }
+
+    if (unit->GetMap()->IsNonRaidDungeon() && EncounterLogManager::dungeonsDisabled()) {
+        return true;
+    }
+
+    if (!EncounterLogManager::hasLog(unit->GetInstanceId())) {
+        return true;
+    }
+
+    if (EncounterLogHelpers::isNotEngagedWithPlayer(unit)) {
+        return true;
+    }
+
+    return false;
+}
 
 #endif //AZEROTHCORE_ENCOUNTERLOGMANAGER_H
