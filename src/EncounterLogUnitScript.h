@@ -29,6 +29,7 @@ public:
             EncounterLogHelpers::getUnitType(calcDamageInfo->target),
             0,
             calcDamageInfo->damages[0].damage,
+            0,
             EncounterLogHelpers::getMeleeResult(calcDamageInfo->hitOutCome),
             EncounterLogHelpers::getTimestamp(),
             false,
@@ -61,6 +62,7 @@ public:
             EncounterLogHelpers::getUnitType(damageInfo->target),
             0,
             damageInfo->damages[0].damage,
+            0,
             EncounterLogHelpers::getMeleeResult(damageInfo->hitOutCome),
             EncounterLogHelpers::getTimestamp(),
             false,
@@ -120,7 +122,21 @@ public:
 
     void OnUnitDeath(Unit *unit, Unit *killer) override
     {
+        if (EncounterLogHelpers::shouldNotBeTracked(unit, false)) {
+            return;
+        }
 
+        EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushDeath(
+            unit->GetMapId(),
+            unit->GetInstanceId(),
+            EncounterLogHelpers::getGuid(EncounterLogHelpers::getOwnerRecursively(unit)),
+            EncounterLogHelpers::getGuid(unit),
+            EncounterLogHelpers::getUnitType(unit),
+            EncounterLogHelpers::getGuid(EncounterLogHelpers::getOwnerRecursively(killer)),
+            EncounterLogHelpers::getGuid(killer),
+            EncounterLogHelpers::getUnitType(killer),
+            EncounterLogHelpers::getTimestamp()
+        );
     }
 };
 

@@ -45,6 +45,7 @@ public:
             EncounterLogHelpers::getUnitType(target),
             0,
             0,
+            0,
             ENCOUNTER_LOG_SPELL_RESULT_EMPTY,
             EncounterLogHelpers::getTimestamp(),
             true,

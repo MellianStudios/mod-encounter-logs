@@ -85,6 +85,10 @@ private:
     std::uint_fast16_t instance_id;
     std::uint_fast32_t guid;
     std::uint_fast8_t state;
+    std::uint_fast32_t max_hp;
+    std::uint_fast32_t hp;
+    std::uint_fast32_t max_resource;
+    std::uint_fast32_t resource;
     std::string gear;
     std::string talents;
     std::string auras;
@@ -96,12 +100,18 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
         std::uint_fast8_t state,
+        std::uint_fast32_t max_hp,
+        std::uint_fast32_t hp,
+        std::uint_fast32_t max_resource,
+        std::uint_fast32_t resource,
         std::string gear,
         std::string talents,
         std::string auras,
         std::uint_fast64_t timestamp
-    ) : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, gear{std::move(gear)},
-        talents{std::move(talents)}, auras{std::move(auras)}, timestamp{timestamp}
+    )
+        : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, max_hp{max_hp}, hp{hp},
+        max_resource{max_resource}, resource{resource}, gear{std::move(gear)}, talents{std::move(talents)},
+        auras{std::move(auras)}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -115,6 +125,14 @@ public:
         result.append(std::to_string(guid));
         result.append(",");
         result.append(std::to_string(state));
+        result.append(",");
+        result.append(std::to_string(max_hp));
+        result.append(",");
+        result.append(std::to_string(hp));
+        result.append(",");
+        result.append(std::to_string(max_resource));
+        result.append(",");
+        result.append(std::to_string(resource));
         result.append(",");
         result.append(gear.empty() ? "null" : "'" + gear + "'");
         result.append(",");
@@ -143,6 +161,7 @@ private:
     std::uint_fast8_t target_type;
     std::uint_fast32_t cost;
     std::uint_fast32_t value;
+    std::uint_fast32_t overkill;
     std::uint_fast8_t result;
     std::uint_fast64_t timestamp;
     bool value_not_present;
@@ -161,14 +180,15 @@ public:
         std::uint_fast8_t target_type,
         std::uint_fast32_t cost,
         std::uint_fast32_t value,
+        std::uint_fast32_t overkill,
         std::uint_fast8_t result,
         std::uint_fast64_t timestamp,
         bool value_not_present,
         EncounterLogArbitraryFlag flag
     ) : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
         caster_guid{caster_guid}, caster_type{caster_type}, target_owner_guid{target_owner_guid},
-        target_guid{target_guid}, target_type{target_type}, cost{cost}, value{value}, result{result},
-        timestamp{timestamp}, value_not_present{value_not_present}, flag{flag}
+        target_guid{target_guid}, target_type{target_type}, cost{cost}, value{value}, overkill{overkill},
+        result{result}, timestamp{timestamp}, value_not_present{value_not_present}, flag{flag}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -197,6 +217,8 @@ public:
         result_string.append(",");
         result_string.append(value_not_present ? "null" : std::to_string(value));
         result_string.append(",");
+        result_string.append(std::to_string(overkill));
+        result_string.append(",");
         result_string.append(std::to_string(result));
         result_string.append(",");
         result_string.append(std::to_string(flag));
@@ -219,6 +241,7 @@ private:
     std::uint_fast32_t target_guid;
     std::uint_fast8_t target_type;
     std::uint_fast32_t value;
+    std::uint_fast32_t overkill;
     std::uint_fast8_t result;
     std::uint_fast64_t timestamp;
 
@@ -232,11 +255,12 @@ public:
         std::uint_fast32_t target_guid,
         std::uint_fast8_t target_type,
         std::uint_fast32_t value,
+        std::uint_fast32_t overkill,
         std::uint_fast8_t result,
         std::uint_fast64_t timestamp
     ) : spell_id{spell_id}, caster_owner_guid{caster_owner_guid}, caster_guid{caster_guid}, caster_type{caster_type},
         target_owner_guid{target_owner_guid}, target_guid{target_guid}, target_type{target_type}, value{value},
-        result{result}, timestamp{timestamp}
+        overkill{overkill}, result{result}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -258,6 +282,8 @@ public:
         result_string.append(std::to_string(target_type));
         result_string.append(",");
         result_string.append(std::to_string(value));
+        result_string.append(",");
+        result_string.append(std::to_string(overkill));
         result_string.append(",");
         result_string.append(std::to_string(result));
         result_string.append(",");
@@ -327,6 +353,62 @@ public:
     }
 };
 
+class EncounterLogDeath
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t owner_guid;
+    std::uint_fast32_t guid;
+    std::uint_fast8_t type;
+    std::uint_fast32_t killer_owner_guid;
+    std::uint_fast32_t killer_guid;
+    std::uint_fast8_t killer_type;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogDeath(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        std::uint_fast32_t guid,
+        std::uint_fast8_t type,
+        std::uint_fast32_t killer_owner_guid,
+        std::uint_fast32_t killer_guid,
+        std::uint_fast8_t killer_type,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, guid{guid}, type{type},
+        killer_owner_guid{killer_owner_guid}, killer_guid{killer_guid}, killer_type{killer_type}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(owner_guid == 0 ? "null" : std::to_string(owner_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(type));
+        result_string.append(",");
+        result_string.append(killer_owner_guid == 0 ? "null" : std::to_string(killer_owner_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(killer_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(killer_type));
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
 class Circumrota
 {
 private:
@@ -342,6 +424,9 @@ private:
     std::map<std::uint_fast32_t, EncounterLogMovement> movement_buffer;
     std::atomic<std::uint_fast32_t> movement_first{1};
     std::atomic<std::uint_fast32_t> movement_last{1};
+    std::map<std::uint_fast32_t, EncounterLogDeath> death_buffer;
+    std::atomic<std::uint_fast32_t> death_first{1};
+    std::atomic<std::uint_fast32_t> death_last{1};
 
 public:
     std::uint_fast32_t pushCombat(
@@ -349,6 +434,10 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
         std::uint_fast8_t state,
+        std::uint_fast32_t max_hp,
+        std::uint_fast32_t hp,
+        std::uint_fast32_t max_resource,
+        std::uint_fast32_t resource,
         std::string gear,
         std::string talents,
         std::string auras,
@@ -360,6 +449,10 @@ public:
             instance_id,
             guid,
             state,
+            max_hp,
+            hp,
+            max_resource,
+            resource,
             std::move(gear),
             std::move(talents),
             std::move(auras),
@@ -416,6 +509,7 @@ public:
         std::uint_fast8_t target_type,
         std::uint_fast32_t cost,
         std::uint_fast32_t value,
+        std::uint_fast32_t overkill,
         std::uint_fast8_t result,
         std::uint_fast64_t timestamp,
         bool value_not_present,
@@ -434,6 +528,7 @@ public:
             target_type,
             cost,
             value,
+            overkill,
             result,
             timestamp,
             value_not_present,
@@ -487,6 +582,7 @@ public:
         std::uint_fast32_t target_guid,
         std::uint_fast8_t target_type,
         std::uint_fast32_t value,
+        std::uint_fast32_t overkill,
         std::uint_fast8_t result,
         std::uint_fast64_t timestamp
     )
@@ -500,6 +596,7 @@ public:
             target_guid,
             target_type,
             value,
+            overkill,
             result,
             timestamp
         }});
@@ -605,6 +702,68 @@ public:
     {
         return movement_buffer.size();
     }
+
+    std::uint_fast32_t pushDeath(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        std::uint_fast32_t guid,
+        std::uint_fast8_t type,
+        std::uint_fast32_t killer_owner_guid,
+        std::uint_fast32_t killer_guid,
+        std::uint_fast8_t killer_type,
+        std::uint_fast64_t timestamp
+    )
+    {
+        death_buffer.insert({death_first, {
+            map_id,
+            instance_id,
+            owner_guid,
+            guid,
+            type,
+            killer_owner_guid,
+            killer_guid,
+            killer_type,
+            timestamp
+        }});
+
+        death_first++;
+
+        return death_first;
+    }
+
+    [[nodiscard]] std::string retrieveDeaths(std::size_t count)
+    {
+        if (death_buffer.empty()) {
+            return "";
+        }
+
+        count = std::min(count, death_buffer.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(death_buffer.at(death_last).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            death_buffer.erase(death_last);
+            i++;
+            death_last++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getDeathBufferSize()
+    {
+        return death_buffer.size();
+    }
 };
 
 class EncounterLogs
@@ -647,6 +806,7 @@ public:
                 auto spell_buffer_size = m_buffer.getSpellBufferSize();
                 auto area_spell_buffer_size = m_buffer.getAreaSpellBufferSize();
                 auto movement_buffer_size = m_buffer.getMovementBufferSize();
+                auto death_buffer_size = m_buffer.getDeathBufferSize();
 
                 std::uint_fast32_t combat_count{0};
                 std::uint_fast32_t combat_query_count{1};
@@ -661,7 +821,7 @@ public:
                 if (combat_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= combat_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, auras, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, max_hp, hp, max_resource, resource, gear, talents, auras, timestamp) VALUES " +
                             m_buffer.retrieveCombats(combat_count)
                         );
                     }
@@ -680,7 +840,7 @@ public:
                 if (spell_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, cost, value, result, flag, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, cost, value, overkill, result, flag, timestamp) VALUES " +
                             m_buffer.retrieveSpells(spell_count)
                         );
                     }
@@ -699,7 +859,7 @@ public:
                 if (area_spell_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= area_spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_area_spells (spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, value, result, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_area_spells (spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, value, overkill, result, timestamp) VALUES " +
                             m_buffer.retrieveAreaSpells(area_spell_count)
                         );
                     }
@@ -720,6 +880,25 @@ public:
                         LoginDatabase.Execute(
                             "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, guid, type, x, y, z, o, `timestamp`) VALUES " +
                             m_buffer.retrieveMovements(movement_count)
+                        );
+                    }
+                }
+
+                std::uint_fast32_t death_count{0};
+                std::uint_fast32_t death_query_count{1};
+
+                if (death_buffer_size < batch_size) {
+                    death_count = death_buffer_size;
+                } else {
+                    death_count = batch_size;
+                    death_query_count = death_buffer_size % batch_size;
+                }
+
+                if (death_count > 0) {
+                    for (std::uint_fast32_t i = 1; i <= death_query_count; i++) {
+                        LoginDatabase.Execute(
+                            "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, guid, type, killer_owner_guid, killer_guid, killer_type, `timestamp`) VALUES " +
+                            m_buffer.retrieveDeaths(death_count)
                         );
                     }
                 }
@@ -846,7 +1025,7 @@ public:
         }
     }
 
-    [[nodiscard]] static inline bool shouldNotBeTracked(Unit *unit);
+    [[nodiscard]] static inline bool shouldNotBeTracked(Unit *unit, bool check_threat_list = true);
 };
 
 class EncounterLogManager
@@ -955,7 +1134,7 @@ public:
     }
 };
 
-inline bool EncounterLogHelpers::shouldNotBeTracked(Unit *unit)
+inline bool EncounterLogHelpers::shouldNotBeTracked(Unit *unit, bool check_threat_list)
 {
     if (!unit->GetMap()->IsDungeon() && !EncounterLogManager::creatureIsTracked(unit)) {
         return true;
@@ -973,7 +1152,7 @@ inline bool EncounterLogHelpers::shouldNotBeTracked(Unit *unit)
         return true;
     }
 
-    if (EncounterLogHelpers::isNotEngagedWithPlayer(unit)) {
+    if (check_threat_list && EncounterLogHelpers::isNotEngagedWithPlayer(unit)) {
         return true;
     }
 

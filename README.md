@@ -28,7 +28,7 @@ Pets, summons and vehicles are tracked in same fashion in relation to whether th
 ---
 
 ### Requirements
-1. This module relies on hook which are not present in AC
+1. This module relies on multiple hooks which are not present in AC
 2. This module depends on nlhomann/json library which is not present in AC
 
 > you can find library integration and hooks here https://github.com/MellianStudios/azerothcore-wotlk/tree/encounter-logs

@@ -117,6 +117,10 @@ public:
             player->GetInstanceId(),
             player->GetGUID().GetRawValue(),
             ENCOUNTER_LOG_START,
+            player->GetMaxHealth(),
+            player->GetHealth(),
+            player->GetMaxPower(POWER_ALL),
+            player->GetPower(POWER_ALL),
             gear.dump(),
             talents.dump(),
             auras.dump(),
@@ -132,16 +136,22 @@ public:
 
         EncounterLogManager::deletePlayerCombat(player);
 
-        EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushCombat(
-            player->GetMapId(),
-            player->GetInstanceId(),
-            player->GetGUID().GetRawValue(),
-            ENCOUNTER_LOG_END,
-            "",
-            "",
-            "",
-            EncounterLogHelpers::getTimestamp()
-        );
+        if (EncounterLogManager::hasLog(player->GetInstanceId())) {
+            EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushCombat(
+                player->GetMapId(),
+                player->GetInstanceId(),
+                player->GetGUID().GetRawValue(),
+                ENCOUNTER_LOG_END,
+                player->GetMaxHealth(),
+                player->GetHealth(),
+                player->GetMaxPower(POWER_ALL),
+                player->GetPower(POWER_ALL),
+                "",
+                "",
+                "",
+                EncounterLogHelpers::getTimestamp()
+            );
+        }
     }
 
     void OnEnvironmentalDamage(Player *player, EnviromentalDamage type, uint32 damage) override
@@ -162,6 +172,7 @@ public:
             ENCOUNTER_LOG_PLAYER,
             0,
             damage,
+            0,
             ENCOUNTER_LOG_SPELL_RESULT_EMPTY,
             EncounterLogHelpers::getTimestamp(),
             false,
