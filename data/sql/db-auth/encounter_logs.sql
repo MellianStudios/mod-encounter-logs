@@ -7,6 +7,15 @@ CREATE TABLE `encounter_logs`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
+DROP TABLE IF EXISTS `encounter_log_instance_resets`;
+CREATE TABLE `encounter_log_instance_resets`
+(
+    `map_id`      SMALLINT UNSIGNED NOT NULL,
+    `instance_id` SMALLINT UNSIGNED NOT NULL,
+    `timestamp`   BIGINT UNSIGNED   NOT NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
 DROP TABLE IF EXISTS `encounter_log_combats`;
 CREATE TABLE `encounter_log_combats`
 (
@@ -32,34 +41,24 @@ CREATE TABLE `encounter_log_spells`
     `instance_id`       SMALLINT UNSIGNED NOT NULL,
     `spell_id`          INT UNSIGNED      NOT NULL,
     `caster_owner_guid` INT UNSIGNED,
+    `caster_owner_type` TINYINT UNSIGNED,
     `caster_guid`       INT UNSIGNED      NOT NULL,
     `caster_type`       TINYINT UNSIGNED  NOT NULL,
     `target_owner_guid` INT UNSIGNED,
+    `target_owner_type` INT UNSIGNED,
     `target_guid`       INT UNSIGNED,
     `target_type`       TINYINT UNSIGNED,
     `cost`              INT UNSIGNED,
     `value`             INT,
-    `overkill`          INT,
+    `over_value`        INT,
+    `absorb_value`      INT,
+    `resist_value`      INT,
+    `block_value`       INT,
+    `is_critical`       BOOL,
+    `is_positive`       BOOL,
     `result`            TINYINT UNSIGNED,
     `flag`              SMALLINT UNSIGNED,
     `timestamp`         BIGINT UNSIGNED   NOT NULL
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
-
-DROP TABLE IF EXISTS `encounter_log_area_spells`;
-CREATE TABLE `encounter_log_area_spells`
-(
-    `spell_id`          INT UNSIGNED     NOT NULL,
-    `caster_owner_guid` INT UNSIGNED,
-    `caster_guid`       INT UNSIGNED     NOT NULL,
-    `caster_type`       TINYINT UNSIGNED NOT NULL,
-    `target_owner_guid` INT UNSIGNED,
-    `target_guid`       INT UNSIGNED     NOT NULL,
-    `target_type`       TINYINT UNSIGNED NOT NULL,
-    `value`             INT,
-    `overkill`          INT,
-    `result`            TINYINT UNSIGNED NOT NULL,
-    `timestamp`         BIGINT UNSIGNED  NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -69,6 +68,7 @@ CREATE TABLE `encounter_log_movements`
     `map_id`      SMALLINT UNSIGNED NOT NULL,
     `instance_id` SMALLINT UNSIGNED NOT NULL,
     `owner_guid`  INT UNSIGNED,
+    `owner_type`  INT UNSIGNED,
     `guid`        INT UNSIGNED      NOT NULL,
     `type`        TINYINT UNSIGNED  NOT NULL,
     `x`           DOUBLE            NOT NULL,
@@ -85,9 +85,11 @@ CREATE TABLE `encounter_log_deaths`
     `map_id`            SMALLINT UNSIGNED NOT NULL,
     `instance_id`       SMALLINT UNSIGNED NOT NULL,
     `owner_guid`        INT UNSIGNED,
+    `owner_type`        TINYINT UNSIGNED,
     `guid`              INT UNSIGNED      NOT NULL,
     `type`              TINYINT UNSIGNED  NOT NULL,
     `killer_owner_guid` INT UNSIGNED,
+    `killer_owner_type` TINYINT UNSIGNED,
     `killer_guid`       INT UNSIGNED      NOT NULL,
     `killer_type`       TINYINT UNSIGNED  NOT NULL,
     `timestamp`         BIGINT UNSIGNED   NOT NULL

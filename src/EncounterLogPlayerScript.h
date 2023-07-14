@@ -116,7 +116,7 @@ public:
             player->GetMapId(),
             player->GetInstanceId(),
             player->GetGUID().GetRawValue(),
-            ENCOUNTER_LOG_START,
+            ENCOUNTER_LOG_STATE_START,
             player->GetMaxHealth(),
             player->GetHealth(),
             player->GetMaxPower(POWER_ALL),
@@ -141,7 +141,7 @@ public:
                 player->GetMapId(),
                 player->GetInstanceId(),
                 player->GetGUID().GetRawValue(),
-                ENCOUNTER_LOG_END,
+                ENCOUNTER_LOG_STATE_END,
                 player->GetMaxHealth(),
                 player->GetHealth(),
                 player->GetMaxPower(POWER_ALL),
@@ -160,23 +160,30 @@ public:
             return;
         }
 
+        // missing environmental type
         EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushSpell(
             player->GetMapId(),
             player->GetInstanceId(),
             0,
             0,
-            player->GetGUID().GetCounter(),
-            ENCOUNTER_LOG_PLAYER,
+            ENCOUNTER_LOG_UNIT_EMPTY,
             0,
-            player->GetGUID().GetCounter(),
-            ENCOUNTER_LOG_PLAYER,
+            ENCOUNTER_LOG_UNIT_EMPTY,
+            0,
+            ENCOUNTER_LOG_UNIT_EMPTY,
+            EncounterLogHelpers::getGuid(player),
+            ENCOUNTER_LOG_UNIT_PLAYER,
             0,
             damage,
             0,
-            ENCOUNTER_LOG_SPELL_RESULT_EMPTY,
-            EncounterLogHelpers::getTimestamp(),
+            0,
+            0,
+            0,
             false,
-            ENCOUNTER_LOG_ARBITRARY_FLAG_ENVIRONMENTAL
+            false,
+            ENCOUNTER_LOG_SPELL_RESULT_EMPTY,
+            ENCOUNTER_LOG_ARBITRARY_FLAG_ENVIRONMENTAL,
+            EncounterLogHelpers::getTimestamp()
         );
     }
 };

@@ -25,26 +25,27 @@ enum EncounterLogDebugValues
 
 enum EncounterLogScope
 {
-    ENCOUNTER_LOG_DUNGEON = 1,
-    ENCOUNTER_LOG_RAID = 2,
-    ENCOUNTER_LOG_EVERYTHING = 3
+    ENCOUNTER_LOG_SCOPE_DUNGEON = 1,
+    ENCOUNTER_LOG_SCOPE_RAID = 2,
+    ENCOUNTER_LOG_SCOPE_EVERYTHING = 3
 };
 
 enum EncounterLogState
 {
-    ENCOUNTER_LOG_START = 1,
-    ENCOUNTER_LOG_END = 2,
+    ENCOUNTER_LOG_STATE_START = 1,
+    ENCOUNTER_LOG_STATE_END = 2,
 };
 
 enum EncounterLogUnitType
 {
-    ENCOUNTER_LOG_PLAYER = 1,
-    ENCOUNTER_LOG_CREATURE = 2,
-    ENCOUNTER_LOG_PET = 3,
-    ENCOUNTER_LOG_TOTEM = 4,
-    ENCOUNTER_LOG_SUMMON = 5,
-    ENCOUNTER_LOG_VEHICLE = 6,
-    ENCOUNTER_LOG_OBJECT = 7,
+    ENCOUNTER_LOG_UNIT_EMPTY = 0,
+    ENCOUNTER_LOG_UNIT_PLAYER = 1,
+    ENCOUNTER_LOG_UNIT_CREATURE = 2,
+    ENCOUNTER_LOG_UNIT_PET = 3,
+    ENCOUNTER_LOG_UNIT_TOTEM = 4,
+    ENCOUNTER_LOG_UNIT_SUMMON = 5,
+    ENCOUNTER_LOG_UNIT_VEHICLE = 6,
+    ENCOUNTER_LOG_UNIT_OBJECT = 7,
 };
 
 enum EncounterLogSpellResult
@@ -84,7 +85,7 @@ private:
     std::uint_fast16_t map_id;
     std::uint_fast16_t instance_id;
     std::uint_fast32_t guid;
-    std::uint_fast8_t state;
+    EncounterLogState state;
     std::uint_fast32_t max_hp;
     std::uint_fast32_t hp;
     std::uint_fast32_t max_resource;
@@ -99,7 +100,7 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
-        std::uint_fast8_t state,
+        EncounterLogState state,
         std::uint_fast32_t max_hp,
         std::uint_fast32_t hp,
         std::uint_fast32_t max_resource,
@@ -154,18 +155,24 @@ private:
     std::uint_fast16_t instance_id;
     std::uint_fast32_t spell_id;
     std::uint_fast32_t caster_owner_guid;
+    EncounterLogUnitType caster_owner_type;
     std::uint_fast32_t caster_guid;
-    std::uint_fast8_t caster_type;
+    EncounterLogUnitType caster_type;
     std::uint_fast32_t target_owner_guid;
+    EncounterLogUnitType target_owner_type;
     std::uint_fast32_t target_guid;
-    std::uint_fast8_t target_type;
+    EncounterLogUnitType target_type;
     std::uint_fast32_t cost;
     std::uint_fast32_t value;
-    std::uint_fast32_t overkill;
-    std::uint_fast8_t result;
-    std::uint_fast64_t timestamp;
-    bool value_not_present;
+    std::uint_fast32_t over_value;
+    std::uint_fast32_t absorb_value;
+    std::uint_fast32_t resist_value;
+    std::uint_fast32_t block_value;
+    bool is_critical;
+    bool is_positive;
+    EncounterLogSpellResult result;
     EncounterLogArbitraryFlag flag;
+    std::uint_fast64_t timestamp;
 
 public:
     EncounterLogSpell(
@@ -173,22 +180,31 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
         std::uint_fast32_t caster_owner_guid,
+        EncounterLogUnitType caster_owner_type,
         std::uint_fast32_t caster_guid,
-        std::uint_fast8_t caster_type,
+        EncounterLogUnitType caster_type,
         std::uint_fast32_t target_owner_guid,
+        EncounterLogUnitType target_owner_type,
         std::uint_fast32_t target_guid,
-        std::uint_fast8_t target_type,
+        EncounterLogUnitType target_type,
         std::uint_fast32_t cost,
         std::uint_fast32_t value,
-        std::uint_fast32_t overkill,
-        std::uint_fast8_t result,
-        std::uint_fast64_t timestamp,
-        bool value_not_present,
-        EncounterLogArbitraryFlag flag
-    ) : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
-        caster_guid{caster_guid}, caster_type{caster_type}, target_owner_guid{target_owner_guid},
-        target_guid{target_guid}, target_type{target_type}, cost{cost}, value{value}, overkill{overkill},
-        result{result}, timestamp{timestamp}, value_not_present{value_not_present}, flag{flag}
+        std::uint_fast32_t over_value,
+        std::uint_fast32_t absorb_value,
+        std::uint_fast32_t resist_value,
+        std::uint_fast32_t block_value,
+        bool is_critical,
+        bool is_positive,
+        EncounterLogSpellResult result,
+        EncounterLogArbitraryFlag flag,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
+        caster_owner_type{caster_owner_type}, caster_guid{caster_guid}, caster_type{caster_type},
+        target_owner_guid{target_owner_guid}, target_owner_type{target_owner_type}, target_guid{target_guid},
+        target_type{target_type}, cost{cost}, value{value}, over_value{over_value}, absorb_value{absorb_value},
+        resist_value{resist_value}, block_value{block_value}, is_critical{is_critical}, is_positive{is_positive},
+        result{result}, flag{flag}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -203,11 +219,15 @@ public:
         result_string.append(",");
         result_string.append(caster_owner_guid == 0 ? "null" : std::to_string(caster_owner_guid));
         result_string.append(",");
+        result_string.append(std::to_string(caster_owner_type));
+        result_string.append(",");
         result_string.append(std::to_string(caster_guid));
         result_string.append(",");
         result_string.append(std::to_string(caster_type));
         result_string.append(",");
         result_string.append(target_owner_guid == 0 ? "null" : std::to_string(target_owner_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(target_owner_type));
         result_string.append(",");
         result_string.append(target_guid == 0 ? "null" : std::to_string(target_guid));
         result_string.append(",");
@@ -215,77 +235,23 @@ public:
         result_string.append(",");
         result_string.append(std::to_string(cost));
         result_string.append(",");
-        result_string.append(value_not_present ? "null" : std::to_string(value));
+        result_string.append(std::to_string(value));
         result_string.append(",");
-        result_string.append(std::to_string(overkill));
+        result_string.append(std::to_string(over_value));
+        result_string.append(",");
+        result_string.append(std::to_string(absorb_value));
+        result_string.append(",");
+        result_string.append(std::to_string(resist_value));
+        result_string.append(",");
+        result_string.append(std::to_string(block_value));
+        result_string.append(",");
+        result_string.append(is_critical ? "1" : "0");
+        result_string.append(",");
+        result_string.append(is_positive ? "1" : "0");
         result_string.append(",");
         result_string.append(std::to_string(result));
         result_string.append(",");
         result_string.append(std::to_string(flag));
-        result_string.append(",");
-        result_string.append(std::to_string(timestamp));
-        result_string.append(")");
-
-        return result_string;
-    }
-};
-
-class EncounterLogAreaSpell
-{
-private:
-    std::uint_fast32_t spell_id;
-    std::uint_fast32_t caster_owner_guid;
-    std::uint_fast32_t caster_guid;
-    std::uint_fast8_t caster_type;
-    std::uint_fast32_t target_owner_guid;
-    std::uint_fast32_t target_guid;
-    std::uint_fast8_t target_type;
-    std::uint_fast32_t value;
-    std::uint_fast32_t overkill;
-    std::uint_fast8_t result;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogAreaSpell(
-        std::uint_fast32_t spell_id,
-        std::uint_fast32_t caster_owner_guid,
-        std::uint_fast32_t caster_guid,
-        std::uint_fast8_t caster_type,
-        std::uint_fast32_t target_owner_guid,
-        std::uint_fast32_t target_guid,
-        std::uint_fast8_t target_type,
-        std::uint_fast32_t value,
-        std::uint_fast32_t overkill,
-        std::uint_fast8_t result,
-        std::uint_fast64_t timestamp
-    ) : spell_id{spell_id}, caster_owner_guid{caster_owner_guid}, caster_guid{caster_guid}, caster_type{caster_type},
-        target_owner_guid{target_owner_guid}, target_guid{target_guid}, target_type{target_type}, value{value},
-        overkill{overkill}, result{result}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result_string{"("};
-
-        result_string.append(std::to_string(spell_id));
-        result_string.append(",");
-        result_string.append(caster_owner_guid == 0 ? "null" : std::to_string(caster_owner_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(caster_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(caster_type));
-        result_string.append(",");
-        result_string.append(target_owner_guid == 0 ? "null" : std::to_string(target_owner_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(target_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(target_type));
-        result_string.append(",");
-        result_string.append(std::to_string(value));
-        result_string.append(",");
-        result_string.append(std::to_string(overkill));
-        result_string.append(",");
-        result_string.append(std::to_string(result));
         result_string.append(",");
         result_string.append(std::to_string(timestamp));
         result_string.append(")");
@@ -300,8 +266,9 @@ private:
     std::uint_fast16_t map_id;
     std::uint_fast16_t instance_id;
     std::uint_fast32_t owner_guid;
+    EncounterLogUnitType owner_type;
     std::uint_fast32_t guid;
-    std::uint_fast8_t type;
+    EncounterLogUnitType type;
     double x;
     double y;
     double z;
@@ -313,15 +280,17 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
         std::uint_fast32_t guid,
-        std::uint_fast8_t type,
+        EncounterLogUnitType type,
         double x,
         double y,
         double z,
         double o,
         std::uint_fast64_t timestamp
-    ) : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, guid{guid}, type{type}, x{x}, y{y}, z{z},
-        o{o}, timestamp{timestamp}
+    )
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
+        type{type}, x{x}, y{y}, z{z}, o{o}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -333,6 +302,8 @@ public:
         result_string.append(std::to_string(instance_id));
         result_string.append(",");
         result_string.append(owner_guid == 0 ? "null" : std::to_string(owner_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(owner_type));
         result_string.append(",");
         result_string.append(std::to_string(guid));
         result_string.append(",");
@@ -359,11 +330,13 @@ private:
     std::uint_fast16_t map_id;
     std::uint_fast16_t instance_id;
     std::uint_fast32_t owner_guid;
+    EncounterLogUnitType owner_type;
     std::uint_fast32_t guid;
-    std::uint_fast8_t type;
+    EncounterLogUnitType type;
     std::uint_fast32_t killer_owner_guid;
+    EncounterLogUnitType killer_owner_type;
     std::uint_fast32_t killer_guid;
-    std::uint_fast8_t killer_type;
+    EncounterLogUnitType killer_type;
     std::uint_fast64_t timestamp;
 
 public:
@@ -371,15 +344,18 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
         std::uint_fast32_t guid,
-        std::uint_fast8_t type,
+        EncounterLogUnitType type,
         std::uint_fast32_t killer_owner_guid,
+        EncounterLogUnitType killer_owner_type,
         std::uint_fast32_t killer_guid,
-        std::uint_fast8_t killer_type,
+        EncounterLogUnitType killer_type,
         std::uint_fast64_t timestamp
     )
-        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, guid{guid}, type{type},
-        killer_owner_guid{killer_owner_guid}, killer_guid{killer_guid}, killer_type{killer_type}, timestamp{timestamp}
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
+        type{type}, killer_owner_guid{killer_owner_guid}, killer_owner_type{killer_owner_type},
+        killer_guid{killer_guid}, killer_type{killer_type}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -392,11 +368,15 @@ public:
         result_string.append(",");
         result_string.append(owner_guid == 0 ? "null" : std::to_string(owner_guid));
         result_string.append(",");
+        result_string.append(std::to_string(owner_type));
+        result_string.append(",");
         result_string.append(std::to_string(guid));
         result_string.append(",");
         result_string.append(std::to_string(type));
         result_string.append(",");
         result_string.append(killer_owner_guid == 0 ? "null" : std::to_string(killer_owner_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(killer_owner_type));
         result_string.append(",");
         result_string.append(std::to_string(killer_guid));
         result_string.append(",");
@@ -412,15 +392,13 @@ public:
 class Circumrota
 {
 private:
+    std::mutex mutex;
     std::map<std::uint_fast32_t, EncounterLogCombat> combat_buffer;
     std::atomic<std::uint_fast32_t> combat_first{1};
     std::atomic<std::uint_fast32_t> combat_last{1};
     std::map<std::uint_fast32_t, EncounterLogSpell> spell_buffer;
     std::atomic<std::uint_fast32_t> spell_first{1};
     std::atomic<std::uint_fast32_t> spell_last{1};
-    std::map<std::uint_fast32_t, EncounterLogAreaSpell> area_spell_buffer;
-    std::atomic<std::uint_fast32_t> area_spell_first{1};
-    std::atomic<std::uint_fast32_t> area_spell_last{1};
     std::map<std::uint_fast32_t, EncounterLogMovement> movement_buffer;
     std::atomic<std::uint_fast32_t> movement_first{1};
     std::atomic<std::uint_fast32_t> movement_last{1};
@@ -433,7 +411,7 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
-        std::uint_fast8_t state,
+        EncounterLogState state,
         std::uint_fast32_t max_hp,
         std::uint_fast32_t hp,
         std::uint_fast32_t max_resource,
@@ -444,6 +422,8 @@ public:
         std::uint_fast64_t timestamp
     )
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         combat_buffer.insert({combat_first, {
             map_id,
             instance_id,
@@ -466,6 +446,8 @@ public:
 
     [[nodiscard]] std::string retrieveCombats(std::size_t count)
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         if (combat_buffer.empty()) {
             return "";
         }
@@ -494,6 +476,8 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getCombatBufferSize()
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         return combat_buffer.size();
     }
 
@@ -502,37 +486,51 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
         std::uint_fast32_t caster_owner_guid,
+        EncounterLogUnitType caster_owner_type,
         std::uint_fast32_t caster_guid,
-        std::uint_fast8_t caster_type,
+        EncounterLogUnitType caster_type,
         std::uint_fast32_t target_owner_guid,
+        EncounterLogUnitType target_owner_type,
         std::uint_fast32_t target_guid,
-        std::uint_fast8_t target_type,
+        EncounterLogUnitType target_type,
         std::uint_fast32_t cost,
         std::uint_fast32_t value,
-        std::uint_fast32_t overkill,
-        std::uint_fast8_t result,
-        std::uint_fast64_t timestamp,
-        bool value_not_present,
-        EncounterLogArbitraryFlag flag
+        std::uint_fast32_t over_value,
+        std::uint_fast32_t absorb_value,
+        std::uint_fast32_t resist_value,
+        std::uint_fast32_t block_value,
+        bool is_critical,
+        bool is_positive,
+        EncounterLogSpellResult result,
+        EncounterLogArbitraryFlag flag,
+        std::uint_fast64_t timestamp
     )
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         spell_buffer.insert({spell_first, {
             map_id,
             instance_id,
             spell_id,
             caster_owner_guid,
+            caster_owner_type,
             caster_guid,
             caster_type,
             target_owner_guid,
+            target_owner_type,
             target_guid,
             target_type,
             cost,
             value,
-            overkill,
+            over_value,
+            absorb_value,
+            resist_value,
+            block_value,
+            is_critical,
+            is_positive,
             result,
-            timestamp,
-            value_not_present,
-            flag
+            flag,
+            timestamp
         }});
 
         spell_first++;
@@ -542,6 +540,8 @@ public:
 
     [[nodiscard]] std::string retrieveSpells(std::size_t count)
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         if (spell_buffer.empty()) {
             return "";
         }
@@ -552,6 +552,10 @@ public:
         result.reserve(count * 40);
 
         std::uint_fast32_t i{1};
+
+        if (spell_buffer.size() < count) {
+            LOG_ERROR("test", "error");
+        }
 
         while (i <= count) {
             result.append(spell_buffer.at(spell_last).asString());
@@ -570,81 +574,18 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getSpellBufferSize()
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         return spell_buffer.size();
-    }
-
-    std::uint_fast32_t pushAreaSpell(
-        std::uint_fast32_t spell_id,
-        std::uint_fast32_t caster_owner_guid,
-        std::uint_fast32_t caster_guid,
-        std::uint_fast8_t caster_type,
-        std::uint_fast32_t target_owner_guid,
-        std::uint_fast32_t target_guid,
-        std::uint_fast8_t target_type,
-        std::uint_fast32_t value,
-        std::uint_fast32_t overkill,
-        std::uint_fast8_t result,
-        std::uint_fast64_t timestamp
-    )
-    {
-        area_spell_buffer.insert({area_spell_first, {
-            spell_id,
-            caster_owner_guid,
-            caster_guid,
-            caster_type,
-            target_owner_guid,
-            target_guid,
-            target_type,
-            value,
-            overkill,
-            result,
-            timestamp
-        }});
-
-        area_spell_first++;
-
-        return area_spell_first;
-    }
-
-    [[nodiscard]] std::string retrieveAreaSpells(std::size_t count)
-    {
-        if (area_spell_buffer.empty()) {
-            return "";
-        }
-
-        count = std::min(count, area_spell_buffer.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(area_spell_buffer.at(area_spell_last).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            area_spell_buffer.erase(area_spell_last);
-            i++;
-            area_spell_last++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getAreaSpellBufferSize()
-    {
-        return area_spell_buffer.size();
     }
 
     std::uint_fast32_t pushMovement(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
         std::uint_fast32_t guid,
-        std::uint_fast8_t type,
+        EncounterLogUnitType type,
         double x,
         double y,
         double z,
@@ -652,10 +593,13 @@ public:
         std::uint_fast64_t timestamp
     )
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         movement_buffer.insert({movement_first, {
             map_id,
             instance_id,
             owner_guid,
+            owner_type,
             guid,
             type,
             x,
@@ -672,6 +616,8 @@ public:
 
     [[nodiscard]] std::string retrieveMovements(std::size_t count)
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         if (movement_buffer.empty()) {
             return "";
         }
@@ -700,6 +646,8 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getMovementBufferSize()
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         return movement_buffer.size();
     }
 
@@ -707,21 +655,27 @@ public:
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
         std::uint_fast32_t guid,
-        std::uint_fast8_t type,
+        EncounterLogUnitType type,
         std::uint_fast32_t killer_owner_guid,
+        EncounterLogUnitType killer_owner_type,
         std::uint_fast32_t killer_guid,
-        std::uint_fast8_t killer_type,
+        EncounterLogUnitType killer_type,
         std::uint_fast64_t timestamp
     )
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         death_buffer.insert({death_first, {
             map_id,
             instance_id,
             owner_guid,
+            owner_type,
             guid,
             type,
             killer_owner_guid,
+            killer_owner_type,
             killer_guid,
             killer_type,
             timestamp
@@ -734,6 +688,8 @@ public:
 
     [[nodiscard]] std::string retrieveDeaths(std::size_t count)
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         if (death_buffer.empty()) {
             return "";
         }
@@ -762,6 +718,8 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getDeathBufferSize()
     {
+        std::lock_guard<std::mutex> lock(mutex);
+
         return death_buffer.size();
     }
 };
@@ -771,7 +729,7 @@ class EncounterLogs
 private:
     std::uint_fast32_t m_map_id;
     std::uint_fast32_t m_instance_id;
-    std::uint_fast32_t m_timestamp;
+    std::uint_fast64_t m_timestamp;
     std::thread m_saver;
     std::atomic<bool> m_stop_saver{false};
     Circumrota m_buffer;
@@ -780,7 +738,7 @@ public:
     EncounterLogs(
         std::uint_fast32_t map_id,
         std::uint_fast32_t instance_id,
-        std::uint_fast32_t timestamp,
+        std::uint_fast64_t timestamp,
         bool with_record = true
     ) : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
     {
@@ -804,7 +762,6 @@ public:
 
                 auto combat_buffer_size = m_buffer.getCombatBufferSize();
                 auto spell_buffer_size = m_buffer.getSpellBufferSize();
-                auto area_spell_buffer_size = m_buffer.getAreaSpellBufferSize();
                 auto movement_buffer_size = m_buffer.getMovementBufferSize();
                 auto death_buffer_size = m_buffer.getDeathBufferSize();
 
@@ -815,7 +772,7 @@ public:
                     combat_count = combat_buffer_size;
                 } else {
                     combat_count = batch_size;
-                    combat_query_count = combat_buffer_size % batch_size;
+                    combat_query_count = combat_buffer_size / batch_size;
                 }
 
                 if (combat_count > 0) {
@@ -834,33 +791,15 @@ public:
                     spell_count = spell_buffer_size;
                 } else {
                     spell_count = batch_size;
-                    spell_query_count = spell_buffer_size % batch_size;
+                    spell_query_count = spell_buffer_size / batch_size;
                 }
 
                 if (spell_count > 0) {
+                    LOG_ERROR("test", "{}", spell_query_count);
                     for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, cost, value, overkill, result, flag, timestamp) VALUES " +
+                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, cost, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, timestamp) VALUES " +
                             m_buffer.retrieveSpells(spell_count)
-                        );
-                    }
-                }
-
-                std::uint_fast32_t area_spell_count{0};
-                std::uint_fast32_t area_spell_query_count{1};
-
-                if (area_spell_buffer_size < batch_size) {
-                    area_spell_count = area_spell_buffer_size;
-                } else {
-                    area_spell_count = batch_size;
-                    area_spell_query_count = area_spell_buffer_size % batch_size;
-                }
-
-                if (area_spell_count > 0) {
-                    for (std::uint_fast32_t i = 1; i <= area_spell_query_count; i++) {
-                        LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_area_spells (spell_id, caster_owner_guid, caster_guid, caster_type, target_owner_guid, target_guid, target_type, value, overkill, result, timestamp) VALUES " +
-                            m_buffer.retrieveAreaSpells(area_spell_count)
                         );
                     }
                 }
@@ -872,13 +811,13 @@ public:
                     movement_count = movement_buffer_size;
                 } else {
                     movement_count = batch_size;
-                    movement_query_count = movement_buffer_size % batch_size;
+                    movement_query_count = movement_buffer_size / batch_size;
                 }
 
                 if (movement_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= movement_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, guid, type, x, y, z, o, `timestamp`) VALUES " +
+                            "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, owner_type, guid, type, x, y, z, o, `timestamp`) VALUES " +
                             m_buffer.retrieveMovements(movement_count)
                         );
                     }
@@ -891,13 +830,13 @@ public:
                     death_count = death_buffer_size;
                 } else {
                     death_count = batch_size;
-                    death_query_count = death_buffer_size % batch_size;
+                    death_query_count = death_buffer_size / batch_size;
                 }
 
                 if (death_count > 0) {
                     for (std::uint_fast32_t i = 1; i <= death_query_count; i++) {
                         LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, guid, type, killer_owner_guid, killer_guid, killer_type, `timestamp`) VALUES " +
+                            "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, owner_type, guid, type, killer_owner_guid, killer_owner_type, killer_guid, killer_type, `timestamp`) VALUES " +
                             m_buffer.retrieveDeaths(death_count)
                         );
                     }
@@ -954,33 +893,33 @@ public:
     [[nodiscard]] static EncounterLogUnitType getUnitType(Unit *unit)
     {
         if (unit->IsPlayer()) {
-            return ENCOUNTER_LOG_PLAYER;
+            return ENCOUNTER_LOG_UNIT_PLAYER;
         }
 
         if (unit->IsPet() || unit->IsHunterPet()) {
-            return ENCOUNTER_LOG_PET;
+            return ENCOUNTER_LOG_UNIT_PET;
         }
 
         if (unit->IsTotem()) {
-            return ENCOUNTER_LOG_TOTEM;
+            return ENCOUNTER_LOG_UNIT_TOTEM;
         }
 
         if (unit->IsSummon()) {
-            return ENCOUNTER_LOG_SUMMON;
+            return ENCOUNTER_LOG_UNIT_SUMMON;
         }
 
         if (unit->IsVehicle()) {
-            return ENCOUNTER_LOG_VEHICLE;
+            return ENCOUNTER_LOG_UNIT_VEHICLE;
         }
 
         if (unit->IsWorldObject()) {
-            return ENCOUNTER_LOG_OBJECT;
+            return ENCOUNTER_LOG_UNIT_OBJECT;
         }
 
-        return ENCOUNTER_LOG_CREATURE;
+        return ENCOUNTER_LOG_UNIT_CREATURE;
     }
 
-    [[nodiscard]] static std::uint_fast32_t getTimestamp()
+    [[nodiscard]] static std::uint_fast64_t getTimestamp()
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
@@ -1011,6 +950,35 @@ public:
         }
     }
 
+    [[nodiscard]] static EncounterLogSpellResult getSpellResult(SpellMissInfo result)
+    {
+        switch (result) {
+            case SPELL_MISS_NONE:
+                return ENCOUNTER_LOG_SPELL_RESULT_NONE;
+            case SPELL_MISS_MISS:
+                return ENCOUNTER_LOG_SPELL_RESULT_MISS;
+            case SPELL_MISS_RESIST:
+                return ENCOUNTER_LOG_SPELL_RESULT_RESIST;
+            case SPELL_MISS_DODGE:
+                return ENCOUNTER_LOG_SPELL_RESULT_DODGE;
+            case SPELL_MISS_PARRY:
+                return ENCOUNTER_LOG_SPELL_RESULT_PARRY;
+            case SPELL_MISS_BLOCK:
+                return ENCOUNTER_LOG_SPELL_RESULT_BLOCK;
+            case SPELL_MISS_EVADE:
+                return ENCOUNTER_LOG_SPELL_RESULT_EVADE;
+            case SPELL_MISS_IMMUNE:
+            case SPELL_MISS_IMMUNE2:
+                return ENCOUNTER_LOG_SPELL_RESULT_IMMUNE;
+            case SPELL_MISS_DEFLECT:
+                return ENCOUNTER_LOG_SPELL_RESULT_DEFLECT;
+            case SPELL_MISS_ABSORB:
+                return ENCOUNTER_LOG_SPELL_RESULT_ABSORB;
+            case SPELL_MISS_REFLECT:
+                return ENCOUNTER_LOG_SPELL_RESULT_REFLECT;
+        }
+    }
+
     [[nodiscard]] static EncounterLogArbitraryFlag getMeleeFlag(WeaponAttackType type)
     {
         switch (type) {
@@ -1028,11 +996,86 @@ public:
     [[nodiscard]] static inline bool shouldNotBeTracked(Unit *unit, bool check_threat_list = true);
 };
 
+class EncounterLogActiveInstanceTracker
+{
+private:
+    std::thread m_tracker;
+    std::atomic<bool> m_stop_tracker{false};
+    // this is not protected from data race
+    // DO NOT WORK WITH THIS VARIABLE ANYWHERE OUTSIDE OF THREAD
+    std::unordered_map<std::uint_fast32_t, std::uint_fast32_t> m_active_instances{};
+
+public:
+    EncounterLogActiveInstanceTracker()
+    {
+        QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance");
+
+        if (instances) {
+            do {
+                Field *instance = instances->Fetch();
+
+                m_active_instances.insert(
+                    {
+                        instance[0].Get<std::uint_fast32_t>(),
+                        instance[1].Get<std::uint_fast32_t>()
+                    }
+                );
+
+            } while (instances->NextRow());
+        }
+
+        m_tracker = std::thread([&]() {
+            while (!m_stop_tracker) {
+                std::this_thread::sleep_for(60s);
+
+                QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance");
+
+                std::unordered_map<std::uint_fast32_t, std::uint_fast32_t> expired_instances = m_active_instances;
+
+                if (instances) {
+                    do {
+                        Field *instance = instances->Fetch();
+
+                        std::uint_fast32_t instance_id = instance[0].Get<std::uint_fast32_t>();
+
+                        if (expired_instances.count(instance_id)) {
+                            expired_instances.erase(instance_id);
+                        } else {
+                            m_active_instances.insert({instance_id, instance[1].Get<std::uint_fast32_t>()});
+                        }
+
+                    } while (instances->NextRow());
+                }
+
+                std::uint_fast64_t timestamp = EncounterLogHelpers::getTimestamp();
+
+                for (auto [instance_id, map_id]: expired_instances) {
+                    LoginDatabase.Execute(
+                        "INSERT INTO encounter_log_instance_resets (map_id, instance_id, timestamp) VALUES (" +
+                        std::to_string(map_id) + "," + std::to_string(instance_id) + "," +
+                        std::to_string(timestamp) + ")"
+                    );
+
+                    m_active_instances.erase(instance_id);
+                }
+            }
+        });
+    }
+
+    ~EncounterLogActiveInstanceTracker()
+    {
+        m_stop_tracker = true;
+
+        m_tracker.join();
+    }
+};
+
 class EncounterLogManager
 {
 private:
     static std::unordered_map<std::uint_fast32_t, std::unique_ptr<EncounterLogs>> m_logs;
     static std::unordered_map<std::uint_fast32_t, bool> m_players_in_combat;
+    static std::unique_ptr<EncounterLogActiveInstanceTracker> m_instance_tracker;
 
 public:
     static void init()
@@ -1056,7 +1099,7 @@ public:
     static void newLog(
         std::uint_fast32_t map_id,
         std::uint_fast32_t instance_id,
-        std::uint_fast32_t timestamp,
+        std::uint_fast64_t timestamp,
         bool with_record = true
     )
     {
@@ -1065,6 +1108,11 @@ public:
         }
 
         m_logs.insert({instance_id, std::make_unique<EncounterLogs>(map_id, instance_id, timestamp, with_record)});
+    }
+
+    static void startInstanceTracker()
+    {
+        m_instance_tracker = std::make_unique<EncounterLogActiveInstanceTracker>();
     }
 
     [[nodiscard]] static EncounterLogs *getLog(std::uint_fast32_t instance_id)
@@ -1081,14 +1129,14 @@ public:
     {
         auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
 
-        return scope != ENCOUNTER_LOG_EVERYTHING && scope != ENCOUNTER_LOG_DUNGEON;
+        return scope != ENCOUNTER_LOG_SCOPE_EVERYTHING && scope != ENCOUNTER_LOG_SCOPE_DUNGEON;
     }
 
     [[nodiscard]] static bool raidsDisabled()
     {
         auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
 
-        return scope != ENCOUNTER_LOG_EVERYTHING && scope != ENCOUNTER_LOG_RAID;
+        return scope != ENCOUNTER_LOG_SCOPE_EVERYTHING && scope != ENCOUNTER_LOG_SCOPE_RAID;
     }
 
     [[nodiscard]] static bool creatureIsTracked(Unit *unit)
