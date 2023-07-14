@@ -211,25 +211,28 @@ public:
     {
         std::string result_string{"("};
 
+        bool has_caster_owner{caster_owner_guid == caster_guid || caster_owner_guid == 0};
+        bool has_target_owner{target_owner_guid == target_guid || target_owner_guid == 0};
+
         result_string.append(std::to_string(map_id));
         result_string.append(",");
         result_string.append(std::to_string(instance_id));
         result_string.append(",");
         result_string.append(std::to_string(spell_id));
         result_string.append(",");
-        result_string.append(caster_owner_guid == 0 ? "null" : std::to_string(caster_owner_guid));
+        result_string.append(has_caster_owner ? std::to_string(caster_owner_guid) : "0");
         result_string.append(",");
-        result_string.append(std::to_string(caster_owner_type));
+        result_string.append(has_caster_owner ? std::to_string(caster_owner_type) : "0");
         result_string.append(",");
         result_string.append(std::to_string(caster_guid));
         result_string.append(",");
         result_string.append(std::to_string(caster_type));
         result_string.append(",");
-        result_string.append(target_owner_guid == 0 ? "null" : std::to_string(target_owner_guid));
+        result_string.append(has_target_owner ? std::to_string(target_owner_guid) : "0");
         result_string.append(",");
-        result_string.append(std::to_string(target_owner_type));
+        result_string.append(has_target_owner ? std::to_string(target_owner_type) : "0");
         result_string.append(",");
-        result_string.append(target_guid == 0 ? "null" : std::to_string(target_guid));
+        result_string.append(std::to_string(target_guid));
         result_string.append(",");
         result_string.append(std::to_string(target_type));
         result_string.append(",");
@@ -297,13 +300,15 @@ public:
     {
         std::string result_string{"("};
 
+        bool has_owner{owner_guid == guid || owner_guid == 0};
+
         result_string.append(std::to_string(map_id));
         result_string.append(",");
         result_string.append(std::to_string(instance_id));
         result_string.append(",");
-        result_string.append(owner_guid == 0 ? "null" : std::to_string(owner_guid));
+        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
         result_string.append(",");
-        result_string.append(std::to_string(owner_type));
+        result_string.append(has_owner ? std::to_string(owner_type) : "0");
         result_string.append(",");
         result_string.append(std::to_string(guid));
         result_string.append(",");
@@ -362,21 +367,24 @@ public:
     {
         std::string result_string{"("};
 
+        bool has_owner{owner_guid == guid || owner_guid == 0};
+        bool has_killer_owner{killer_owner_guid == killer_guid || killer_owner_guid == 0};
+
         result_string.append(std::to_string(map_id));
         result_string.append(",");
         result_string.append(std::to_string(instance_id));
         result_string.append(",");
-        result_string.append(owner_guid == 0 ? "null" : std::to_string(owner_guid));
+        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
         result_string.append(",");
-        result_string.append(std::to_string(owner_type));
+        result_string.append(has_owner ? std::to_string(owner_type) : "0");
         result_string.append(",");
         result_string.append(std::to_string(guid));
         result_string.append(",");
         result_string.append(std::to_string(type));
         result_string.append(",");
-        result_string.append(killer_owner_guid == 0 ? "null" : std::to_string(killer_owner_guid));
+        result_string.append(has_killer_owner ? std::to_string(killer_owner_guid) : "0");
         result_string.append(",");
-        result_string.append(std::to_string(killer_owner_type));
+        result_string.append(has_killer_owner ? std::to_string(killer_owner_type) : "0");
         result_string.append(",");
         result_string.append(std::to_string(killer_guid));
         result_string.append(",");
