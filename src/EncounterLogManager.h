@@ -553,10 +553,6 @@ public:
 
         std::uint_fast32_t i{1};
 
-        if (spell_buffer.size() < count) {
-            LOG_ERROR("test", "error");
-        }
-
         while (i <= count) {
             result.append(spell_buffer.at(spell_last).asString());
 
@@ -795,7 +791,6 @@ public:
                 }
 
                 if (spell_count > 0) {
-                    LOG_ERROR("test", "{}", spell_query_count);
                     for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
                         LoginDatabase.Execute(
                             "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, cost, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, timestamp) VALUES " +

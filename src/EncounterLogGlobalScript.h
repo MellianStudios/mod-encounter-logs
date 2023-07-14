@@ -10,25 +10,6 @@ public:
     EncounterLogGlobalScript() : GlobalScript("EncounterLogGlobalScript")
     {}
 
-//    void OnSpellSendSpellGo(Spell *spell) override
-//    {
-//        if (EncounterLogHelpers::shouldNotBeTracked(spell->GetCaster())) {
-//            return;
-//        }
-//
-//        if (spell->GetUniqueTargetInfo()->empty()) {
-//            LOG_ERROR("test", "self AND area without targets AND ticks of indirect dots");
-//        } else if (spell->GetUniqueTargetInfo()->size() == 1) {
-//            LOG_ERROR("test", "direct target AND area with 1 target");
-//            for (auto &hit: *spell->GetUniqueTargetInfo()) {
-//            }
-//        } else {
-//            LOG_ERROR("test", "area");
-//            for (auto &hit: *spell->GetUniqueTargetInfo()) {
-//            }
-//        }
-//    }
-
     void OnAuraApplicationClientUpdate(Unit *target, Aura *aura, bool remove) override
     {
         if (EncounterLogHelpers::shouldNotBeTracked(target)) {
