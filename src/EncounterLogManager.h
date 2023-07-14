@@ -211,8 +211,8 @@ public:
     {
         std::string result_string{"("};
 
-        bool has_caster_owner{caster_owner_guid == caster_guid || caster_owner_guid == 0};
-        bool has_target_owner{target_owner_guid == target_guid || target_owner_guid == 0};
+        bool has_caster_owner{caster_owner_guid != caster_guid && caster_owner_guid != 0};
+        bool has_target_owner{target_owner_guid != target_guid && target_owner_guid != 0};
 
         result_string.append(std::to_string(map_id));
         result_string.append(",");
@@ -300,7 +300,7 @@ public:
     {
         std::string result_string{"("};
 
-        bool has_owner{owner_guid == guid || owner_guid == 0};
+        bool has_owner{owner_guid != guid && owner_guid != 0};
 
         result_string.append(std::to_string(map_id));
         result_string.append(",");
@@ -367,8 +367,8 @@ public:
     {
         std::string result_string{"("};
 
-        bool has_owner{owner_guid == guid || owner_guid == 0};
-        bool has_killer_owner{killer_owner_guid == killer_guid || killer_owner_guid == 0};
+        bool has_owner{owner_guid != guid && owner_guid != 0};
+        bool has_killer_owner{killer_owner_guid != killer_guid && killer_owner_guid != 0};
 
         result_string.append(std::to_string(map_id));
         result_string.append(",");
