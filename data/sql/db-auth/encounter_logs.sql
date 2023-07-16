@@ -58,6 +58,7 @@ CREATE TABLE `encounter_log_spells`
     `is_positive`       BOOL,
     `result`            TINYINT UNSIGNED,
     `flag`              SMALLINT UNSIGNED,
+    `arbitrary_flag`    SMALLINT UNSIGNED,
     `timestamp`         BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;

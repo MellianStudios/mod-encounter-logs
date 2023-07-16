@@ -39,6 +39,7 @@ public:
             false,
             EncounterLogHelpers::getMeleeResult(calcDamageInfo->hitOutCome),
             EncounterLogHelpers::getMeleeFlag(calcDamageInfo->attackType),
+            ENCOUNTER_LOG_ARBITRARY_FLAG_DAMAGE_SHIELD,
             EncounterLogHelpers::getTimestamp()
         );
     }
@@ -73,6 +74,7 @@ public:
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_NONE,
+            ENCOUNTER_LOG_FLAG_EMPTY,
             ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
             EncounterLogHelpers::getTimestamp()
         );
@@ -107,6 +109,7 @@ public:
             false,
             EncounterLogHelpers::getMeleeResult(damageInfo->hitOutCome),
             EncounterLogHelpers::getMeleeFlag(damageInfo->attackType),
+            ENCOUNTER_LOG_ARBITRARY_FLAG_MELEE,
             EncounterLogHelpers::getTimestamp()
         );
     }
@@ -138,6 +141,7 @@ public:
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_IMMUNE,
+            ENCOUNTER_LOG_FLAG_EMPTY,
             ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
             EncounterLogHelpers::getTimestamp()
         );
@@ -170,6 +174,7 @@ public:
             false,
             false,
             EncounterLogHelpers::getSpellResult(missInfo),
+            ENCOUNTER_LOG_FLAG_EMPTY,
             ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
             EncounterLogHelpers::getTimestamp()
         );
@@ -202,6 +207,7 @@ public:
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_RESIST,
+            ENCOUNTER_LOG_FLAG_EMPTY,
             ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
             EncounterLogHelpers::getTimestamp()
         );
@@ -237,7 +243,8 @@ public:
             log->blocked,
             false,
             false,
-            ENCOUNTER_LOG_SPELL_RESULT_NONE,
+            ENCOUNTER_LOG_SPELL_RESULT_REFLECT,
+            ENCOUNTER_LOG_FLAG_EMPTY,
             ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
             EncounterLogHelpers::getTimestamp()
         );
@@ -274,6 +281,7 @@ public:
             critical,
             true,
             ENCOUNTER_LOG_SPELL_RESULT_NONE,
+            EncounterLogHelpers::getSpellSchoolFlag(healInfo.GetSchoolMask()),
             ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
             EncounterLogHelpers::getTimestamp()
         );
@@ -306,7 +314,8 @@ public:
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_NONE,
-            ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
+            EncounterLogHelpers::getPowerFlag(powerType),
+            ENCOUNTER_LOG_ARBITRARY_FLAG_ENERGIZE,
             EncounterLogHelpers::getTimestamp()
         );
     }
@@ -338,7 +347,8 @@ public:
             pInfo->critical,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_NONE,
-            ENCOUNTER_LOG_ARBITRARY_FLAG_EMPTY,
+            EncounterLogHelpers::getAuraTypeFlag(pInfo->auraEff->GetAuraType()),
+            ENCOUNTER_LOG_ARBITRARY_FLAG_PERIODICAL,
             EncounterLogHelpers::getTimestamp()
         );
     }
