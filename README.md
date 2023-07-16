@@ -1,6 +1,7 @@
 # Encounter logs
 
 ### Currently works only in instances (dungeons/raids) and (NYI) for selected creatures in open world
+### Check progress of https://github.com/MellianStudios/mod-encounter-logs/issues/2 before using this module
 
 ---
 
