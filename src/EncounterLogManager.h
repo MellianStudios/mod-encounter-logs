@@ -811,6 +811,20 @@ public:
     [[nodiscard]] static std::uint_fast32_t getGuid(Unit *unit)
     {
         if (Creature *creature = unit->ToCreature()) {
+            if (
+                creature->IsSummon()
+                ||
+                creature->IsPet()
+                ||
+                creature->IsHunterPet()
+                ||
+                creature->IsTotem()
+                ||
+                creature->IsVehicle()
+                ) {
+                return creature->GetCreatureTemplate()->Entry;
+            }
+
             return creature->GetSpawnId();
         }
 
