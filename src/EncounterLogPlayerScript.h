@@ -182,7 +182,7 @@ public:
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_EMPTY,
-            ENCOUNTER_LOG_FLAG_EMPTY,
+            EncounterLogHelpers::getEnvironmentalFlag(type),
             ENCOUNTER_LOG_ARBITRARY_FLAG_ENVIRONMENTAL,
             EncounterLogHelpers::getTimestamp()
         );

@@ -994,6 +994,26 @@ public:
         }
     }
 
+    [[nodiscard]] static EncounterLogSpellFlag getEnvironmentalFlag(EnviromentalDamage flag)
+    {
+        switch (flag) {
+            case DAMAGE_EXHAUSTED:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_EXHAUSTED;
+            case DAMAGE_DROWNING:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_DROWNING;
+            case DAMAGE_FALL:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_FALL;
+            case DAMAGE_LAVA:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_LAVA;
+            case DAMAGE_SLIME:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_SLIME;
+            case DAMAGE_FIRE:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_FIRE;
+            case DAMAGE_FALL_TO_VOID:
+                return ENCOUNTER_LOG_FLAG_DAMAGE_FALL_TO_VOID;
+        }
+    }
+
     [[nodiscard]] static EncounterLogSpellFlag getAuraTypeFlag(AuraType type)
     {
         switch (type) {
@@ -1529,6 +1549,8 @@ public:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_264;
             case SPELL_AURA_265:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_265;
+            case SPELL_AURA_266:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_266;
             case SPELL_AURA_MOD_IMMUNE_AURA_APPLY_SCHOOL:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_MOD_IMMUNE_AURA_APPLY_SCHOOL;
             case SPELL_AURA_MOD_ATTACK_POWER_OF_STAT_PERCENT:
@@ -1585,28 +1607,44 @@ public:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_OVERRIDE_SPELLS;
             case SPELL_AURA_PREVENT_REGENERATE_POWER:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_PREVENT_REGENERATE_POWER;
+            case SPELL_AURA_295:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_295;
             case SPELL_AURA_SET_VEHICLE_ID:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_SET_VEHICLE_ID;
             case SPELL_AURA_BLOCK_SPELL_FAMILY:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_BLOCK_SPELL_FAMILY;
             case SPELL_AURA_STRANGULATE:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_STRANGULATE;
+            case SPELL_AURA_299:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_299;
             case SPELL_AURA_SHARE_DAMAGE_PCT:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_SHARE_DAMAGE_PCT;
             case SPELL_AURA_SCHOOL_HEAL_ABSORB:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_SCHOOL_HEAL_ABSORB;
+            case SPELL_AURA_302:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_302;
             case SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE;
             case SPELL_AURA_MOD_FAKE_INEBRIATE:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_MOD_FAKE_INEBRIATE;
             case SPELL_AURA_MOD_MINIMUM_SPEED:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_MOD_MINIMUM_SPEED;
+            case SPELL_AURA_306:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_306;
             case SPELL_AURA_HEAL_ABSORB_TEST:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_HEAL_ABSORB_TEST;
             case SPELL_AURA_MOD_CRIT_CHANCE_FOR_CASTER:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_MOD_CRIT_CHANCE_FOR_CASTER;
+            case SPELL_AURA_309:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_309;
             case SPELL_AURA_MOD_CREATURE_AOE_DAMAGE_AVOIDANCE:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_MOD_CREATURE_AOE_DAMAGE_AVOIDANCE;
+            case SPELL_AURA_311:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_311;
+            case SPELL_AURA_312:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_312;
+            case SPELL_AURA_313:
+                return ENCOUNTER_LOG_FLAG_SPELL_AURA_313;
             case SPELL_AURA_PREVENT_RESURRECTION:
                 return ENCOUNTER_LOG_FLAG_SPELL_AURA_PREVENT_RESURRECTION;
             case SPELL_AURA_UNDERWATER_WALKING:
