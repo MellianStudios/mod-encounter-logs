@@ -36,7 +36,6 @@ public:
             0,
             0,
             0,
-            0,
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_EMPTY,

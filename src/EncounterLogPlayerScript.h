@@ -23,6 +23,7 @@ public:
         nlohmann::json gear = nlohmann::json::object();
         nlohmann::json talents = nlohmann::json::object();
         nlohmann::json auras = nlohmann::json::array();
+        nlohmann::json stats = nlohmann::json::array();
 
         for (int i = 0; i <= 18; i++) {
             Item *item = player->GetItemByPos(255, i);
@@ -124,6 +125,7 @@ public:
             gear.dump(),
             talents.dump(),
             auras.dump(),
+            stats.dump(),
             EncounterLogHelpers::getTimestamp()
         );
     }
@@ -149,6 +151,7 @@ public:
                 "",
                 "",
                 "",
+                "",
                 EncounterLogHelpers::getTimestamp()
             );
         }
@@ -160,7 +163,6 @@ public:
             return;
         }
 
-        // missing environmental type
         EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushSpell(
             player->GetMapId(),
             player->GetInstanceId(),
@@ -173,7 +175,6 @@ public:
             ENCOUNTER_LOG_UNIT_EMPTY,
             EncounterLogHelpers::getGuid(player),
             ENCOUNTER_LOG_UNIT_PLAYER,
-            0,
             damage,
             0,
             0,

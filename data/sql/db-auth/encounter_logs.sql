@@ -30,6 +30,7 @@ CREATE TABLE `encounter_log_combats`
     `gear`         LONGTEXT,
     `talents`      LONGTEXT,
     `auras`        LONGTEXT,
+    `stats`        LONGTEXT,
     `timestamp`    BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
@@ -48,7 +49,6 @@ CREATE TABLE `encounter_log_spells`
     `target_owner_type` INT UNSIGNED,
     `target_guid`       INT UNSIGNED,
     `target_type`       TINYINT UNSIGNED,
-    `cost`              INT UNSIGNED,
     `value`             INT,
     `over_value`        INT,
     `absorb_value`      INT,
@@ -94,5 +94,20 @@ CREATE TABLE `encounter_log_deaths`
     `killer_guid`       INT UNSIGNED      NOT NULL,
     `killer_type`       TINYINT UNSIGNED  NOT NULL,
     `timestamp`         BIGINT UNSIGNED   NOT NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+DROP TABLE IF EXISTS `encounter_log_powers`;
+CREATE TABLE `encounter_log_powers`
+(
+    `map_id`      SMALLINT UNSIGNED NOT NULL,
+    `instance_id` SMALLINT UNSIGNED NOT NULL,
+    `owner_guid`  INT UNSIGNED,
+    `owner_type`  TINYINT UNSIGNED,
+    `guid`        INT UNSIGNED      NOT NULL,
+    `type`        TINYINT UNSIGNED  NOT NULL,
+    `power_type`  SMALLINT UNSIGNED NOT NULL,
+    `value`       INT               NOT NULL,
+    `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;

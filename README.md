@@ -1,7 +1,6 @@
 # Encounter logs
 
-### Currently works only in instances (dungeons/raids) and (NYI) for selected creatures in open world
-### Check progress of https://github.com/MellianStudios/mod-encounter-logs/issues/2 before using this module
+### This module is in alpha version please check progress of https://github.com/MellianStudios/mod-encounter-logs/issues/2 before using it
 
 ---
 
@@ -12,28 +11,40 @@
 
 ---
 
-### Tracking
-- when player enters combat this event itself is tracked together with player gear (including gems and enchants), talents and buffs/debuffs
-- players casting spells are tracked always
-- player movement is tracked always
-- creature casting spells are tracked when in combat with player
-- creature movement is tracked when in combat with player
+## Tracking
 
-Pets, summons and vehicles are tracked in same fashion in relation to whether they are owned by player or creature
+Tracking can be turned ON/OFF for dungeons/raids/specific creatures in open world
+
+For all options see config
+
+### Player
+
+- combat
+- gear (at combat start)
+- talents (at combat start)
+- auras (at combat start)
+- stats (at combat start)
+- movement
+- death
+- power
+- spells
+
+player tracking is always ON in instances
+
+### Creature (all units except player)
+
+- spells
+- movement
+- death
 
 ---
 
-### Expectation and assumptions
-- this module assumes you did not change default logic of item enchantments
-
----
-
-### Requirements
+## Requirements
 1. This module relies on multiple hooks which are not present in AC
 2. This module depends on nlhomann/json library which is not present in AC
 
 > you can find library integration and hooks here https://github.com/MellianStudios/azerothcore-wotlk/tree/encounter-logs
 ---
 
-### Credits / contributors
+## Credits / contributors
 - [Anchy](https://github.com/AnchyDev) (general support)

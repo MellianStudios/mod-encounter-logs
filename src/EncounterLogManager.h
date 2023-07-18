@@ -31,6 +31,7 @@ private:
     std::string gear;
     std::string talents;
     std::string auras;
+    std::string stats;
     std::uint_fast64_t timestamp;
 
 public:
@@ -46,11 +47,12 @@ public:
         std::string gear,
         std::string talents,
         std::string auras,
+        std::string stats,
         std::uint_fast64_t timestamp
     )
         : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, max_hp{max_hp}, hp{hp},
         max_resource{max_resource}, resource{resource}, gear{std::move(gear)}, talents{std::move(talents)},
-        auras{std::move(auras)}, timestamp{timestamp}
+        auras{std::move(auras)}, stats{std::move(stats)}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -79,6 +81,8 @@ public:
         result.append(",");
         result.append(auras.empty() ? "null" : "'" + auras + "'");
         result.append(",");
+        result.append(stats.empty() ? "null" : "'" + stats + "'");
+        result.append(",");
         result.append(std::to_string(timestamp));
         result.append(")");
 
@@ -100,7 +104,6 @@ private:
     EncounterLogUnitType target_owner_type;
     std::uint_fast32_t target_guid;
     EncounterLogUnitType target_type;
-    std::uint_fast32_t cost;
     std::uint_fast32_t value;
     std::uint_fast32_t over_value;
     std::uint_fast32_t absorb_value;
@@ -109,7 +112,7 @@ private:
     bool is_critical;
     bool is_positive;
     EncounterLogSpellResult result;
-    int flag;
+    EncounterLogSpellFlag flag;
     EncounterLogArbitraryFlag arbitrary_flag;
     std::uint_fast64_t timestamp;
 
@@ -126,7 +129,6 @@ public:
         EncounterLogUnitType target_owner_type,
         std::uint_fast32_t target_guid,
         EncounterLogUnitType target_type,
-        std::uint_fast32_t cost,
         std::uint_fast32_t value,
         std::uint_fast32_t over_value,
         std::uint_fast32_t absorb_value,
@@ -135,14 +137,14 @@ public:
         bool is_critical,
         bool is_positive,
         EncounterLogSpellResult result,
-        int flag,
+        EncounterLogSpellFlag flag,
         EncounterLogArbitraryFlag arbitrary_flag,
         std::uint_fast64_t timestamp
     )
         : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
         caster_owner_type{caster_owner_type}, caster_guid{caster_guid}, caster_type{caster_type},
         target_owner_guid{target_owner_guid}, target_owner_type{target_owner_type}, target_guid{target_guid},
-        target_type{target_type}, cost{cost}, value{value}, over_value{over_value}, absorb_value{absorb_value},
+        target_type{target_type}, value{value}, over_value{over_value}, absorb_value{absorb_value},
         resist_value{resist_value}, block_value{block_value}, is_critical{is_critical}, is_positive{is_positive},
         result{result}, flag{flag}, arbitrary_flag{arbitrary_flag}, timestamp{timestamp}
     {}
@@ -175,8 +177,6 @@ public:
         result_string.append(std::to_string(target_guid));
         result_string.append(",");
         result_string.append(std::to_string(target_type));
-        result_string.append(",");
-        result_string.append(std::to_string(cost));
         result_string.append(",");
         result_string.append(std::to_string(value));
         result_string.append(",");
@@ -339,25 +339,106 @@ public:
     }
 };
 
+class EncounterLogPower
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t owner_guid;
+    EncounterLogUnitType owner_type;
+    std::uint_fast32_t guid;
+    EncounterLogUnitType type;
+    EncounterLogSpellFlag power_type;
+    std::uint_fast32_t value;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogPower(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        EncounterLogSpellFlag power_type,
+        std::uint_fast32_t value,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
+        type{type}, power_type{power_type}, value{value}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+        bool has_owner{owner_guid != guid && owner_guid != 0};
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(type));
+        result_string.append(",");
+        result_string.append(std::to_string(power_type));
+        result_string.append(",");
+        result_string.append(std::to_string(value));
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
 class Circumrota
 {
 private:
-    std::mutex mutex;
-    std::map<std::uint_fast32_t, EncounterLogCombat> combat_buffer;
-    std::atomic<std::uint_fast32_t> combat_first{1};
-    std::atomic<std::uint_fast32_t> combat_last{1};
-    std::map<std::uint_fast32_t, EncounterLogSpell> spell_buffer;
-    std::atomic<std::uint_fast32_t> spell_first{1};
-    std::atomic<std::uint_fast32_t> spell_last{1};
-    std::map<std::uint_fast32_t, EncounterLogMovement> movement_buffer;
-    std::atomic<std::uint_fast32_t> movement_first{1};
-    std::atomic<std::uint_fast32_t> movement_last{1};
-    std::map<std::uint_fast32_t, EncounterLogDeath> death_buffer;
-    std::atomic<std::uint_fast32_t> death_first{1};
-    std::atomic<std::uint_fast32_t> death_last{1};
+    std::atomic<bool> branch{false};
+    std::unordered_map<std::uint_fast64_t, EncounterLogCombat> combat_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogCombat> combat_buffer_1;
+    std::atomic<std::uint_fast64_t> combat_first_0{1};
+    std::atomic<std::uint_fast64_t> combat_last_0{1};
+    std::atomic<std::uint_fast64_t> combat_first_1{1};
+    std::atomic<std::uint_fast64_t> combat_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogSpell> spell_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogSpell> spell_buffer_1;
+    std::atomic<std::uint_fast64_t> spell_first_0{1};
+    std::atomic<std::uint_fast64_t> spell_last_0{1};
+    std::atomic<std::uint_fast64_t> spell_first_1{1};
+    std::atomic<std::uint_fast64_t> spell_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogMovement> movement_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogMovement> movement_buffer_1;
+    std::atomic<std::uint_fast64_t> movement_first_0{1};
+    std::atomic<std::uint_fast64_t> movement_last_0{1};
+    std::atomic<std::uint_fast64_t> movement_first_1{1};
+    std::atomic<std::uint_fast64_t> movement_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogDeath> death_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogDeath> death_buffer_1;
+    std::atomic<std::uint_fast64_t> death_first_0{1};
+    std::atomic<std::uint_fast64_t> death_last_0{1};
+    std::atomic<std::uint_fast64_t> death_first_1{1};
+    std::atomic<std::uint_fast64_t> death_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogPower> power_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogPower> power_buffer_1;
+    std::atomic<std::uint_fast64_t> power_first_0{1};
+    std::atomic<std::uint_fast64_t> power_last_0{1};
+    std::atomic<std::uint_fast64_t> power_first_1{1};
+    std::atomic<std::uint_fast64_t> power_last_1{1};
 
 public:
-    std::uint_fast32_t pushCombat(
+    void switchBranch()
+    {
+        branch = !branch;
+    }
+
+    void pushCombat(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
@@ -369,12 +450,33 @@ public:
         std::string gear,
         std::string talents,
         std::string auras,
+        std::string stats,
         std::uint_fast64_t timestamp
     )
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            combat_buffer_1.insert({combat_first_1, {
+                map_id,
+                instance_id,
+                guid,
+                state,
+                max_hp,
+                hp,
+                max_resource,
+                resource,
+                std::move(gear),
+                std::move(talents),
+                std::move(auras),
+                std::move(stats),
+                timestamp
+            }});
 
-        combat_buffer.insert({combat_first, {
+            combat_first_1++;
+
+            return;
+        }
+
+        combat_buffer_0.insert({combat_first_0, {
             map_id,
             instance_id,
             guid,
@@ -386,23 +488,39 @@ public:
             std::move(gear),
             std::move(talents),
             std::move(auras),
+            std::move(stats),
             timestamp
         }});
 
-        combat_first++;
-
-        return combat_first;
+        combat_first_0++;
     }
 
     [[nodiscard]] std::string retrieveCombats(std::size_t count)
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            count = std::min(count, combat_buffer_0.size());
 
-        if (combat_buffer.empty()) {
-            return "";
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(combat_buffer_0.at(combat_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                combat_buffer_0.erase(combat_last_0);
+                i++;
+                combat_last_0++;
+            }
+
+            return result;
         }
 
-        count = std::min(count, combat_buffer.size());
+        count = std::min(count, combat_buffer_1.size());
 
         std::string result;
         result.reserve(count * 40);
@@ -410,15 +528,15 @@ public:
         std::uint_fast32_t i{1};
 
         while (i <= count) {
-            result.append(combat_buffer.at(combat_last).asString());
+            result.append(combat_buffer_1.at(combat_last_1).asString());
 
             if (i != count) {
                 result.append(",");
             }
 
-            combat_buffer.erase(combat_last);
+            combat_buffer_1.erase(combat_last_1);
             i++;
-            combat_last++;
+            combat_last_1++;
         }
 
         return result;
@@ -426,12 +544,14 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getCombatBufferSize()
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            return combat_buffer_0.size();
+        }
 
-        return combat_buffer.size();
+        return combat_buffer_1.size();
     }
 
-    std::uint_fast32_t pushSpell(
+    void pushSpell(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t spell_id,
@@ -443,7 +563,6 @@ public:
         EncounterLogUnitType target_owner_type,
         std::uint_fast32_t target_guid,
         EncounterLogUnitType target_type,
-        std::uint_fast32_t cost,
         std::uint_fast32_t value,
         std::uint_fast32_t over_value,
         std::uint_fast32_t absorb_value,
@@ -457,9 +576,38 @@ public:
         std::uint_fast64_t timestamp
     )
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            spell_buffer_1.insert({spell_first_1, {
+                map_id,
+                instance_id,
+                spell_id,
+                caster_owner_guid,
+                caster_owner_type,
+                caster_guid,
+                caster_type,
+                target_owner_guid,
+                target_owner_type,
+                target_guid,
+                target_type,
+                value,
+                over_value,
+                absorb_value,
+                resist_value,
+                block_value,
+                is_critical,
+                is_positive,
+                result,
+                flag,
+                arbitrary_flag,
+                timestamp
+            }});
 
-        spell_buffer.insert({spell_first, {
+            spell_first_1++;
+
+            return;
+        }
+
+        spell_buffer_0.insert({spell_first_0, {
             map_id,
             instance_id,
             spell_id,
@@ -471,7 +619,6 @@ public:
             target_owner_type,
             target_guid,
             target_type,
-            cost,
             value,
             over_value,
             absorb_value,
@@ -485,20 +632,35 @@ public:
             timestamp
         }});
 
-        spell_first++;
-
-        return spell_first;
+        spell_first_0++;
     }
 
     [[nodiscard]] std::string retrieveSpells(std::size_t count)
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            count = std::min(count, spell_buffer_0.size());
 
-        if (spell_buffer.empty()) {
-            return "";
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(spell_buffer_0.at(spell_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                spell_buffer_0.erase(spell_last_0);
+                i++;
+                spell_last_0++;
+            }
+
+            return result;
         }
 
-        count = std::min(count, spell_buffer.size());
+        count = std::min(count, spell_buffer_1.size());
 
         std::string result;
         result.reserve(count * 40);
@@ -506,15 +668,15 @@ public:
         std::uint_fast32_t i{1};
 
         while (i <= count) {
-            result.append(spell_buffer.at(spell_last).asString());
+            result.append(spell_buffer_1.at(spell_last_1).asString());
 
             if (i != count) {
                 result.append(",");
             }
 
-            spell_buffer.erase(spell_last);
+            spell_buffer_1.erase(spell_last_1);
             i++;
-            spell_last++;
+            spell_last_1++;
         }
 
         return result;
@@ -522,12 +684,14 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getSpellBufferSize()
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            return spell_buffer_0.size();
+        }
 
-        return spell_buffer.size();
+        return spell_buffer_1.size();
     }
 
-    std::uint_fast32_t pushMovement(
+    void pushMovement(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t owner_guid,
@@ -541,9 +705,25 @@ public:
         std::uint_fast64_t timestamp
     )
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            movement_buffer_1.insert({movement_first_1, {
+                map_id,
+                instance_id,
+                owner_guid,
+                owner_type,
+                guid,
+                type,
+                x,
+                y,
+                z,
+                o,
+                timestamp
+            }});
 
-        movement_buffer.insert({movement_first, {
+            movement_first_1++;
+        }
+
+        movement_buffer_0.insert({movement_first_0, {
             map_id,
             instance_id,
             owner_guid,
@@ -557,20 +737,35 @@ public:
             timestamp
         }});
 
-        movement_first++;
-
-        return movement_first;
+        movement_first_0++;
     }
 
     [[nodiscard]] std::string retrieveMovements(std::size_t count)
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            count = std::min(count, movement_buffer_0.size());
 
-        if (movement_buffer.empty()) {
-            return "";
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(movement_buffer_0.at(movement_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                movement_buffer_0.erase(movement_last_0);
+                i++;
+                movement_last_0++;
+            }
+
+            return result;
         }
 
-        count = std::min(count, movement_buffer.size());
+        count = std::min(count, movement_buffer_1.size());
 
         std::string result;
         result.reserve(count * 40);
@@ -578,15 +773,15 @@ public:
         std::uint_fast32_t i{1};
 
         while (i <= count) {
-            result.append(movement_buffer.at(movement_last).asString());
+            result.append(movement_buffer_1.at(movement_last_1).asString());
 
             if (i != count) {
                 result.append(",");
             }
 
-            movement_buffer.erase(movement_last);
+            movement_buffer_1.erase(movement_last_1);
             i++;
-            movement_last++;
+            movement_last_1++;
         }
 
         return result;
@@ -594,12 +789,14 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getMovementBufferSize()
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            return movement_buffer_0.size();
+        }
 
-        return movement_buffer.size();
+        return movement_buffer_1.size();
     }
 
-    std::uint_fast32_t pushDeath(
+    void pushDeath(
         std::uint_fast16_t map_id,
         std::uint_fast16_t instance_id,
         std::uint_fast32_t owner_guid,
@@ -613,9 +810,25 @@ public:
         std::uint_fast64_t timestamp
     )
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            death_buffer_1.insert({death_first_1, {
+                map_id,
+                instance_id,
+                owner_guid,
+                owner_type,
+                guid,
+                type,
+                killer_owner_guid,
+                killer_owner_type,
+                killer_guid,
+                killer_type,
+                timestamp
+            }});
 
-        death_buffer.insert({death_first, {
+            death_first_1++;
+        }
+
+        death_buffer_0.insert({death_first_0, {
             map_id,
             instance_id,
             owner_guid,
@@ -629,20 +842,35 @@ public:
             timestamp
         }});
 
-        death_first++;
-
-        return death_first;
+        death_first_0++;
     }
 
     [[nodiscard]] std::string retrieveDeaths(std::size_t count)
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            count = std::min(count, death_buffer_0.size());
 
-        if (death_buffer.empty()) {
-            return "";
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(death_buffer_0.at(death_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                death_buffer_0.erase(death_last_0);
+                i++;
+                death_last_0++;
+            }
+
+            return result;
         }
 
-        count = std::min(count, death_buffer.size());
+        count = std::min(count, death_buffer_1.size());
 
         std::string result;
         result.reserve(count * 40);
@@ -650,15 +878,15 @@ public:
         std::uint_fast32_t i{1};
 
         while (i <= count) {
-            result.append(death_buffer.at(death_last).asString());
+            result.append(death_buffer_1.at(death_last_1).asString());
 
             if (i != count) {
                 result.append(",");
             }
 
-            death_buffer.erase(death_last);
+            death_buffer_1.erase(death_last_1);
             i++;
-            death_last++;
+            death_last_1++;
         }
 
         return result;
@@ -666,21 +894,243 @@ public:
 
     [[nodiscard]] std::uint_fast32_t getDeathBufferSize()
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        if (branch) {
+            return death_buffer_0.size();
+        }
 
-        return death_buffer.size();
+        return death_buffer_1.size();
+    }
+
+    void pushPower(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        EncounterLogSpellFlag power_type,
+        std::uint_fast32_t value,
+        std::uint_fast64_t timestamp
+    )
+    {
+        if (branch) {
+            power_buffer_1.insert({power_first_1, {
+                map_id,
+                instance_id,
+                owner_guid,
+                owner_type,
+                guid,
+                type,
+                power_type,
+                value,
+                timestamp
+            }});
+
+            power_first_1++;
+        }
+
+        power_buffer_0.insert({power_first_0, {
+            map_id,
+            instance_id,
+            owner_guid,
+            owner_type,
+            guid,
+            type,
+            power_type,
+            value,
+            timestamp
+        }});
+
+        power_first_0++;
+    }
+
+    [[nodiscard]] std::string retrievePowers(std::size_t count)
+    {
+        if (branch) {
+            count = std::min(count, power_buffer_0.size());
+
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(power_buffer_0.at(power_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                power_buffer_0.erase(power_last_0);
+                i++;
+                power_last_0++;
+            }
+
+            return result;
+        }
+
+        count = std::min(count, power_buffer_1.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(power_buffer_1.at(power_last_1).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            power_buffer_1.erase(power_last_1);
+            i++;
+            power_last_1++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getPowerBufferSize()
+    {
+        if (branch) {
+            return power_buffer_0.size();
+        }
+
+        return power_buffer_1.size();
     }
 };
 
 class EncounterLogs
 {
 private:
+    std::uint_fast32_t m_batch_size;
     std::uint_fast32_t m_map_id;
     std::uint_fast32_t m_instance_id;
     std::uint_fast64_t m_timestamp;
     std::thread m_saver;
     std::atomic<bool> m_stop_saver{false};
     Circumrota m_buffer;
+
+    void storeCombats()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getCombatBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, max_hp, hp, max_resource, resource, gear, stats, talents, auras, timestamp) VALUES " +
+                m_buffer.retrieveCombats(count)
+            );
+        }
+    }
+
+    void storeDeaths()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getDeathBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, owner_type, guid, type, killer_owner_guid, killer_owner_type, killer_guid, killer_type, `timestamp`) VALUES " +
+                m_buffer.retrieveDeaths(count)
+            );
+        }
+    }
+
+    void storeMovements()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getMovementBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, owner_type, guid, type, x, y, z, o, `timestamp`) VALUES " +
+                m_buffer.retrieveMovements(count)
+            );
+        }
+    }
+
+    void storePowers()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getPowerBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_powers (map_id, instance_id, owner_guid, owner_type, guid, type, power_type, value, `timestamp`) VALUES " +
+                m_buffer.retrievePowers(count)
+            );
+        }
+    }
+
+    void storeSpells()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getSpellBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, arbitrary_flag, timestamp) VALUES " +
+                m_buffer.retrieveSpells(count)
+            );
+        }
+    }
 
 public:
     EncounterLogs(
@@ -690,6 +1140,8 @@ public:
         bool with_record = true
     ) : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
     {
+        m_batch_size = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.BatchSize", 1000);
+
         if (with_record) {
             LoginDatabase.Execute(
                 "INSERT INTO encounter_logs (map_id, instance_id, timestamp) VALUES (" +
@@ -706,88 +1158,15 @@ public:
                     )
                 );
 
-                auto batch_size = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.BatchSize", 1000);
+                m_buffer.switchBranch();
 
-                auto combat_buffer_size = m_buffer.getCombatBufferSize();
-                auto spell_buffer_size = m_buffer.getSpellBufferSize();
-                auto movement_buffer_size = m_buffer.getMovementBufferSize();
-                auto death_buffer_size = m_buffer.getDeathBufferSize();
+                std::this_thread::sleep_for(50ms);
 
-                std::uint_fast32_t combat_count{0};
-                std::uint_fast32_t combat_query_count{1};
-
-                if (combat_buffer_size < batch_size) {
-                    combat_count = combat_buffer_size;
-                } else {
-                    combat_count = batch_size;
-                    combat_query_count = combat_buffer_size / batch_size;
-                }
-
-                if (combat_count > 0) {
-                    for (std::uint_fast32_t i = 1; i <= combat_query_count; i++) {
-                        LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, max_hp, hp, max_resource, resource, gear, talents, auras, timestamp) VALUES " +
-                            m_buffer.retrieveCombats(combat_count)
-                        );
-                    }
-                }
-
-                std::uint_fast32_t spell_count{0};
-                std::uint_fast32_t spell_query_count{1};
-
-                if (spell_buffer_size < batch_size) {
-                    spell_count = spell_buffer_size;
-                } else {
-                    spell_count = batch_size;
-                    spell_query_count = spell_buffer_size / batch_size;
-                }
-
-                if (spell_count > 0) {
-                    for (std::uint_fast32_t i = 1; i <= spell_query_count; i++) {
-                        LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, cost, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, arbitrary_flag, timestamp) VALUES " +
-                            m_buffer.retrieveSpells(spell_count)
-                        );
-                    }
-                }
-
-                std::uint_fast32_t movement_count{0};
-                std::uint_fast32_t movement_query_count{1};
-
-                if (movement_buffer_size < batch_size) {
-                    movement_count = movement_buffer_size;
-                } else {
-                    movement_count = batch_size;
-                    movement_query_count = movement_buffer_size / batch_size;
-                }
-
-                if (movement_count > 0) {
-                    for (std::uint_fast32_t i = 1; i <= movement_query_count; i++) {
-                        LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, owner_type, guid, type, x, y, z, o, `timestamp`) VALUES " +
-                            m_buffer.retrieveMovements(movement_count)
-                        );
-                    }
-                }
-
-                std::uint_fast32_t death_count{0};
-                std::uint_fast32_t death_query_count{1};
-
-                if (death_buffer_size < batch_size) {
-                    death_count = death_buffer_size;
-                } else {
-                    death_count = batch_size;
-                    death_query_count = death_buffer_size / batch_size;
-                }
-
-                if (death_count > 0) {
-                    for (std::uint_fast32_t i = 1; i <= death_query_count; i++) {
-                        LoginDatabase.Execute(
-                            "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, owner_type, guid, type, killer_owner_guid, killer_owner_type, killer_guid, killer_type, `timestamp`) VALUES " +
-                            m_buffer.retrieveDeaths(death_count)
-                        );
-                    }
-                }
+                storeCombats();
+                storeDeaths();
+                storeMovements();
+                storePowers();
+                storeSpells();
             }
         });
     }

@@ -29,7 +29,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(calcDamageInfo->target)),
             EncounterLogHelpers::getGuid(calcDamageInfo->target),
             EncounterLogHelpers::getUnitType(calcDamageInfo->target),
-            0,
             calcDamageInfo->damages[0].damage,
             overkill,
             calcDamageInfo->damages[0].absorb,
@@ -65,7 +64,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(log->target)),
             EncounterLogHelpers::getGuid(log->target),
             EncounterLogHelpers::getUnitType(log->target),
-            0,
             log->damage,
             overkill > 0 ? overkill : 0,
             log->absorb,
@@ -99,7 +97,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(damageInfo->target)),
             EncounterLogHelpers::getGuid(damageInfo->target),
             EncounterLogHelpers::getUnitType(damageInfo->target),
-            0,
             damageInfo->damages[0].damage,
             0,
             damageInfo->damages[0].absorb,
@@ -137,7 +134,6 @@ public:
             0,
             0,
             0,
-            0,
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_IMMUNE,
@@ -165,7 +161,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(victim)),
             EncounterLogHelpers::getGuid(victim),
             EncounterLogHelpers::getUnitType(victim),
-            0,
             0,
             0,
             0,
@@ -203,7 +198,6 @@ public:
             0,
             0,
             0,
-            0,
             false,
             false,
             ENCOUNTER_LOG_SPELL_RESULT_RESIST,
@@ -235,7 +229,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(log->target)),
             EncounterLogHelpers::getGuid(log->target),
             EncounterLogHelpers::getUnitType(log->target),
-            0,
             log->damage,
             overkill > 0 ? overkill : 0,
             log->absorb,
@@ -272,7 +265,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(healInfo.GetTarget())),
             EncounterLogHelpers::getGuid(healInfo.GetTarget()),
             EncounterLogHelpers::getUnitType(healInfo.GetTarget()),
-            0,
             healInfo.GetHeal(),
             overheal,
             healInfo.GetAbsorb(),
@@ -305,7 +297,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(victim)),
             EncounterLogHelpers::getGuid(victim),
             EncounterLogHelpers::getUnitType(victim),
-            0,
             damage,
             0,
             0,
@@ -338,7 +329,6 @@ public:
             EncounterLogHelpers::getUnitType(EncounterLogHelpers::getOwnerRecursively(victim)),
             EncounterLogHelpers::getGuid(victim),
             EncounterLogHelpers::getUnitType(victim),
-            0,
             pInfo->damage,
             pInfo->overDamage,
             pInfo->absorb,
@@ -373,6 +363,31 @@ public:
             EncounterLogHelpers::getUnitType(killer_owner),
             EncounterLogHelpers::getGuid(killer),
             EncounterLogHelpers::getUnitType(killer),
+            EncounterLogHelpers::getTimestamp()
+        );
+    }
+
+    void OnSetPower(Unit *unit, Powers power, uint32 val, bool withPowerUpdate, bool fromRegenerate) override
+    {
+        if (EncounterLogHelpers::shouldNotBeTracked(unit)) {
+            return;
+        }
+
+        if (!unit->IsPlayer() && power != POWER_HEALTH) {
+            return;
+        }
+
+        Unit *unit_owner = EncounterLogHelpers::getOwnerRecursively(unit);
+
+        EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushPower(
+            unit->GetMapId(),
+            unit->GetInstanceId(),
+            EncounterLogHelpers::getGuid(unit_owner),
+            EncounterLogHelpers::getUnitType(unit_owner),
+            EncounterLogHelpers::getGuid(unit),
+            EncounterLogHelpers::getUnitType(unit),
+            EncounterLogHelpers::getPowerFlag(power),
+            val,
             EncounterLogHelpers::getTimestamp()
         );
     }
