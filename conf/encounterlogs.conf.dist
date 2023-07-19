@@ -24,20 +24,28 @@ EncounterLogs.General.Enabled = 1
 EncounterLogs.Logging.Scope = 3
 
 #
-#    EncounterLogs.Logging.OpenWorld
+#    EncounterLogs.Logging.OpenWorld.Entries
+#        Description: List of creature template entries separated with ;
+#        Default:     (empty)
+#
+
+EncounterLogs.Logging.OpenWorld.Entries =
+
+#
+#    EncounterLogs.Logging.OpenWorld.Guids
 #        Description: List of creature guids separated with ;
 #        Default:     (empty)
 #
 
-EncounterLogs.Logging.OpenWorld =
+EncounterLogs.Logging.OpenWorld.Guids =
 
 ########################################
 # System configuration
-# WARNING NEVER TOUCH THESE UNLESS YOU ARE SURE WHAT YOU ARE DOING
+# WARNING NEVER TOUCH THESE UNLESS YOU ARE SURE YOU KNOW WHAT YOU ARE DOING
 ########################################
 #
 #    EncounterLogs.System.SaveFrequency
-#        Description: Interval for saving logs to DB in miliseconds
+#        Description: Interval for saving logs to DB in milliseconds
 #        Default:     1000
 #
 

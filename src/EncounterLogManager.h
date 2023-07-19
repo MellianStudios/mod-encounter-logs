@@ -1210,6 +1210,15 @@ public:
         return unit->GetGUID().GetCounter();
     }
 
+    [[nodiscard]] static std::uint_fast32_t getEntry(Unit *unit)
+    {
+        if (Creature *creature = unit->ToCreature()) {
+            return creature->GetCreatureTemplate()->Entry;
+        }
+
+        return 0;
+    }
+
     [[nodiscard]] static bool isNotEngagedWithPlayer(Unit *unit)
     {
         if (unit->IsPlayer()) {
@@ -2132,6 +2141,9 @@ private:
     static std::unordered_map<std::uint_fast32_t, std::unique_ptr<EncounterLogs>> m_logs;
     static std::unordered_map<std::uint_fast32_t, bool> m_players_in_combat;
     static std::unique_ptr<EncounterLogActiveInstanceTracker> m_instance_tracker;
+    static bool m_open_world_tracking;
+    static std::unordered_map<std::uint_fast32_t, bool> m_open_world_tracked_creature_entries;
+    static std::unordered_map<std::uint_fast32_t, bool> m_open_world_tracked_creature_guids;
 
 public:
     static void init()
@@ -2150,6 +2162,21 @@ public:
                 );
             } while (instances->NextRow());
         }
+
+        auto entries = sConfigMgr->GetOption<std::string>("EncounterLogs.Logging.OpenWorld.Entries", "");
+        auto guids = sConfigMgr->GetOption<std::string>("EncounterLogs.Logging.OpenWorld.Guids", "");
+
+        if (!entries.empty()) {
+            m_open_world_tracked_creature_entries = parseConfigValue(entries);
+
+            m_open_world_tracking = true;
+        }
+
+        if (!guids.empty()) {
+            m_open_world_tracked_creature_guids = parseConfigValue(guids);
+
+            m_open_world_tracking = true;
+        }
     }
 
     static void newLog(
@@ -2164,6 +2191,23 @@ public:
         }
 
         m_logs.insert({instance_id, std::make_unique<EncounterLogs>(map_id, instance_id, timestamp, with_record)});
+    }
+
+    static std::unordered_map<std::uint_fast32_t, bool> parseConfigValue(const std::string &value)
+    {
+        std::unordered_map<std::uint_fast32_t, bool> result;
+
+        const char *delimiter_c = ";";
+
+        char *argument = std::strtok((char *) value.c_str(), ";");
+
+        while (argument) {
+            result.insert({std::stoi(argument), true});
+
+            argument = std::strtok(nullptr, delimiter_c);
+        }
+
+        return result;
     }
 
     static void startInstanceTracker()
@@ -2197,25 +2241,15 @@ public:
 
     [[nodiscard]] static bool creatureIsTracked(Unit *unit)
     {
-        auto config = sConfigMgr->GetOption<std::string>("EncounterLogs.Logging.OpenWorld", "");
-
-        if (config.empty()) {
+        if (!m_open_world_tracking) {
             return false;
         }
 
-        std::map<std::uint_fast32_t, bool> creatures;
-
-        const char *delimiter_c = ";";
-
-        char *argument = std::strtok((char *) config.c_str(), ";");
-
-        while (argument) {
-            creatures.insert({std::stoi(argument), true});
-
-            argument = std::strtok(nullptr, delimiter_c);
+        if (m_open_world_tracked_creature_guids.count(EncounterLogHelpers::getGuid(unit)) > 0) {
+            return true;
         }
 
-        if (creatures.count(EncounterLogHelpers::getGuid(unit))) {
+        if (m_open_world_tracked_creature_entries.count(EncounterLogHelpers::getEntry(unit)) > 0) {
             return true;
         }
 
