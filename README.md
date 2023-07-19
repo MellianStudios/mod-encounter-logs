@@ -37,6 +37,8 @@ player tracking is always ON in instances
 - movement
 - death
 
+### Please note that this module currently does not have any respect for phases so if there is fights happening in different phases of same map there is no way to distinguish them
+
 ---
 
 ## Requirements
