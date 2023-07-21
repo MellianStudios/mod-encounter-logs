@@ -2268,7 +2268,7 @@ public:
 
     [[nodiscard]] static bool playerNotInCombat(Player *player)
     {
-        return m_players_in_combat.contains(player->GetGUID().GetCounter());
+        return !m_players_in_combat.contains(player->GetGUID().GetCounter());
     }
 };
 

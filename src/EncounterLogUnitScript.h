@@ -367,29 +367,52 @@ public:
         );
     }
 
-    void OnSetPower(Unit *unit, Powers power, uint32 val, bool withPowerUpdate, bool fromRegenerate) override
+    void OnUnitUpdate(Unit *unit, uint32 /*diff*/) override
     {
         if (EncounterLogHelpers::shouldNotBeTracked(unit)) {
             return;
         }
 
-        if (!unit->IsPlayer() && power != POWER_HEALTH) {
-            return;
-        }
-
-        Unit *unit_owner = EncounterLogHelpers::getOwnerRecursively(unit);
-
-        EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushPower(
-            unit->GetMapId(),
-            unit->GetInstanceId(),
-            EncounterLogHelpers::getGuid(unit_owner),
-            EncounterLogHelpers::getUnitType(unit_owner),
-            EncounterLogHelpers::getGuid(unit),
-            EncounterLogHelpers::getUnitType(unit),
-            EncounterLogHelpers::getPowerFlag(power),
-            val,
-            EncounterLogHelpers::getTimestamp()
+        auto now = std::chrono::steady_clock::now();
+        auto time_since_last_log = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now - unit->m_encounter_log_last_update
         );
+
+        if (
+            time_since_last_log > std::chrono::milliseconds(500)
+            &&
+            (
+                unit->m_encounter_log_last_position_x != unit->GetPositionX()
+                ||
+                unit->m_encounter_log_last_position_y != unit->GetPositionY()
+                ||
+                unit->m_encounter_log_last_position_o != unit->GetOrientation()
+                ||
+                unit->m_encounter_log_last_position_z != unit->GetPositionZ()
+            )
+            ) {
+            Unit *owner = EncounterLogHelpers::getOwnerRecursively(unit);
+
+            EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushMovement(
+                unit->GetMapId(),
+                unit->GetInstanceId(),
+                EncounterLogHelpers::getGuid(owner),
+                EncounterLogHelpers::getUnitType(owner),
+                EncounterLogHelpers::getGuid(unit),
+                EncounterLogHelpers::getUnitType(unit),
+                unit->GetPositionX(),
+                unit->GetPositionY(),
+                unit->GetPositionZ(),
+                unit->GetOrientation(),
+                EncounterLogHelpers::getTimestamp()
+            );
+
+            unit->m_encounter_log_last_update = now;
+            unit->m_encounter_log_last_position_x = unit->GetPositionX();
+            unit->m_encounter_log_last_position_y = unit->GetPositionY();
+            unit->m_encounter_log_last_position_z = unit->GetPositionZ();
+            unit->m_encounter_log_last_position_o = unit->GetOrientation();
+        }
     }
 };
 
