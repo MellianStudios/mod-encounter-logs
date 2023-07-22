@@ -375,6 +375,8 @@ public:
         result_string.append(",");
         result_string.append(std::to_string(value));
         result_string.append(",");
+        result_string.append(is_max ? "1" : "0");
+        result_string.append(",");
         result_string.append(std::to_string(timestamp));
         result_string.append(")");
 
@@ -1078,7 +1080,7 @@ private:
 
         for (const auto &count: result) {
             LoginDatabase.Execute(
-                "INSERT INTO encounter_log_powers (map_id, instance_id, owner_guid, owner_type, guid, type, power_type, value, `timestamp`) VALUES " +
+                "INSERT INTO encounter_log_powers (map_id, instance_id, owner_guid, owner_type, guid, type, power_type, value, is_max, `timestamp`) VALUES " +
                 m_buffer.retrievePowers(count)
             );
         }
@@ -1367,6 +1369,8 @@ public:
                 return ENCOUNTER_LOG_FLAG_POWER_RUNE;
             case 31:
                 return ENCOUNTER_LOG_FLAG_POWER_RUNIC_POWER;
+            default:
+                return ENCOUNTER_LOG_FLAG_EMPTY;
         }
     }
 

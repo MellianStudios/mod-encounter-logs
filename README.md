@@ -1,6 +1,6 @@
 # Encounter logs
 
-### This module is in alpha version please check progress of https://github.com/MellianStudios/mod-encounter-logs/issues/2 before using it
+### This module is in beta please check progress of https://github.com/MellianStudios/mod-encounter-logs/issues/2 before using it
 
 ---
 

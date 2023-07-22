@@ -53,7 +53,7 @@ public:
     void OnChangeUpdateData(Object *object, uint16 index, uint64 value) override
     {
         if (Unit *unit = object->ToUnit()) {
-            if (EncounterLogHelpers::shouldNotBeTracked(unit)) {
+            if (!object->IsInWorld() || EncounterLogHelpers::shouldNotBeTracked(unit)) {
                 return;
             }
 

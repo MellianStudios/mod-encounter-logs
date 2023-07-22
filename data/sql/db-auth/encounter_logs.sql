@@ -104,7 +104,7 @@ CREATE TABLE `encounter_log_powers`
     `type`        TINYINT UNSIGNED  NOT NULL,
     `power_type`  SMALLINT UNSIGNED NOT NULL,
     `value`       INT               NOT NULL,
-    `value`       BOOL              NOT NULL,
+    `is_max`      BOOL              NOT NULL,
     `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
