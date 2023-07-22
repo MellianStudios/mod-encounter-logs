@@ -19,19 +19,15 @@ CREATE TABLE `encounter_log_instance_resets`
 DROP TABLE IF EXISTS `encounter_log_combats`;
 CREATE TABLE `encounter_log_combats`
 (
-    `map_id`       SMALLINT UNSIGNED NOT NULL,
-    `instance_id`  SMALLINT UNSIGNED NOT NULL,
-    `guid`         INT UNSIGNED      NOT NULL,
-    `state`        TINYINT UNSIGNED  NOT NULL,
-    `max_hp`       INT               NOT NULL,
-    `hp`           INT               NOT NULL,
-    `max_resource` INT               NOT NULL,
-    `resource`     INT               NOT NULL,
-    `gear`         LONGTEXT,
-    `talents`      LONGTEXT,
-    `auras`        LONGTEXT,
-    `stats`        LONGTEXT,
-    `timestamp`    BIGINT UNSIGNED   NOT NULL
+    `map_id`      SMALLINT UNSIGNED NOT NULL,
+    `instance_id` SMALLINT UNSIGNED NOT NULL,
+    `guid`        INT UNSIGNED      NOT NULL,
+    `state`       TINYINT UNSIGNED  NOT NULL,
+    `gear`        LONGTEXT,
+    `talents`     LONGTEXT,
+    `auras`       LONGTEXT,
+    `stats`       LONGTEXT,
+    `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -108,6 +104,7 @@ CREATE TABLE `encounter_log_powers`
     `type`        TINYINT UNSIGNED  NOT NULL,
     `power_type`  SMALLINT UNSIGNED NOT NULL,
     `value`       INT               NOT NULL,
+    `value`       BOOL              NOT NULL,
     `timestamp`   BIGINT UNSIGNED   NOT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;

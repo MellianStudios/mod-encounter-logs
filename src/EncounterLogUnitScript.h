@@ -104,7 +104,7 @@ public:
             damageInfo->blocked_amount,
             false,
             false,
-            EncounterLogHelpers::getMeleeResult(damageInfo->hitOutCome),
+            static_cast<std::int_fast64_t>(damageInfo->hitOutCome) > 8 ? ENCOUNTER_LOG_SPELL_RESULT_LIKELY_GM_COMMAND : EncounterLogHelpers::getMeleeResult(damageInfo->hitOutCome),
             EncounterLogHelpers::getMeleeFlag(damageInfo->attackType),
             ENCOUNTER_LOG_ARBITRARY_FLAG_MELEE,
             EncounterLogHelpers::getTimestamp()

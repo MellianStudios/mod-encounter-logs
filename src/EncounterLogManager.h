@@ -24,10 +24,6 @@ private:
     std::uint_fast16_t instance_id;
     std::uint_fast32_t guid;
     EncounterLogState state;
-    std::uint_fast32_t max_hp;
-    std::uint_fast32_t hp;
-    std::uint_fast32_t max_resource;
-    std::uint_fast32_t resource;
     std::string gear;
     std::string talents;
     std::string auras;
@@ -40,19 +36,14 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
         EncounterLogState state,
-        std::uint_fast32_t max_hp,
-        std::uint_fast32_t hp,
-        std::uint_fast32_t max_resource,
-        std::uint_fast32_t resource,
         std::string gear,
         std::string talents,
         std::string auras,
         std::string stats,
         std::uint_fast64_t timestamp
     )
-        : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, max_hp{max_hp}, hp{hp},
-        max_resource{max_resource}, resource{resource}, gear{std::move(gear)}, talents{std::move(talents)},
-        auras{std::move(auras)}, stats{std::move(stats)}, timestamp{timestamp}
+        : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, gear{std::move(gear)},
+        talents{std::move(talents)}, auras{std::move(auras)}, stats{std::move(stats)}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -66,14 +57,6 @@ public:
         result.append(std::to_string(guid));
         result.append(",");
         result.append(std::to_string(state));
-        result.append(",");
-        result.append(std::to_string(max_hp));
-        result.append(",");
-        result.append(std::to_string(hp));
-        result.append(",");
-        result.append(std::to_string(max_resource));
-        result.append(",");
-        result.append(std::to_string(resource));
         result.append(",");
         result.append(gear.empty() ? "null" : "'" + gear + "'");
         result.append(",");
@@ -350,6 +333,7 @@ private:
     EncounterLogUnitType type;
     EncounterLogSpellFlag power_type;
     std::uint_fast32_t value;
+    bool is_max;
     std::uint_fast64_t timestamp;
 
 public:
@@ -362,10 +346,11 @@ public:
         EncounterLogUnitType type,
         EncounterLogSpellFlag power_type,
         std::uint_fast32_t value,
+        bool is_max,
         std::uint_fast64_t timestamp
     )
         : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
-        type{type}, power_type{power_type}, value{value}, timestamp{timestamp}
+        type{type}, power_type{power_type}, value{value}, is_max{is_max}, timestamp{timestamp}
     {}
 
     [[nodiscard]] std::string asString() const
@@ -443,10 +428,6 @@ public:
         std::uint_fast16_t instance_id,
         std::uint_fast32_t guid,
         EncounterLogState state,
-        std::uint_fast32_t max_hp,
-        std::uint_fast32_t hp,
-        std::uint_fast32_t max_resource,
-        std::uint_fast32_t resource,
         std::string gear,
         std::string talents,
         std::string auras,
@@ -460,10 +441,6 @@ public:
                 instance_id,
                 guid,
                 state,
-                max_hp,
-                hp,
-                max_resource,
-                resource,
                 std::move(gear),
                 std::move(talents),
                 std::move(auras),
@@ -481,10 +458,6 @@ public:
             instance_id,
             guid,
             state,
-            max_hp,
-            hp,
-            max_resource,
-            resource,
             std::move(gear),
             std::move(talents),
             std::move(auras),
@@ -910,6 +883,7 @@ public:
         EncounterLogUnitType type,
         EncounterLogSpellFlag power_type,
         std::uint_fast32_t value,
+        bool is_max,
         std::uint_fast64_t timestamp
     )
     {
@@ -923,6 +897,7 @@ public:
                 type,
                 power_type,
                 value,
+                is_max,
                 timestamp
             }});
 
@@ -938,6 +913,7 @@ public:
             type,
             power_type,
             value,
+            is_max,
             timestamp
         }});
 
@@ -1030,7 +1006,7 @@ private:
 
         for (const auto &count: result) {
             LoginDatabase.Execute(
-                "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, max_hp, hp, max_resource, resource, gear, stats, talents, auras, timestamp) VALUES " +
+                "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, stats, talents, auras, timestamp) VALUES " +
                 m_buffer.retrieveCombats(count)
             );
         }
@@ -1365,6 +1341,32 @@ public:
                 return ENCOUNTER_LOG_FLAG_POWER_ALL;
             case POWER_HEALTH:
                 return ENCOUNTER_LOG_FLAG_POWER_HEALTH;
+        }
+    }
+
+    [[nodiscard]] static EncounterLogSpellFlag getPowerFlag(std::uint_fast8_t power)
+    {
+        if (power > 31) {
+            power -= 8;
+        }
+
+        switch (power) {
+            case 24:
+                return ENCOUNTER_LOG_FLAG_POWER_HEALTH;
+            case 25:
+                return ENCOUNTER_LOG_FLAG_POWER_MANA;
+            case 26:
+                return ENCOUNTER_LOG_FLAG_POWER_RAGE;
+            case 27:
+                return ENCOUNTER_LOG_FLAG_POWER_FOCUS;
+            case 28:
+                return ENCOUNTER_LOG_FLAG_POWER_ENERGY;
+            case 29:
+                return ENCOUNTER_LOG_FLAG_POWER_HAPPINESS;
+            case 30:
+                return ENCOUNTER_LOG_FLAG_POWER_RUNE;
+            case 31:
+                return ENCOUNTER_LOG_FLAG_POWER_RUNIC_POWER;
         }
     }
 

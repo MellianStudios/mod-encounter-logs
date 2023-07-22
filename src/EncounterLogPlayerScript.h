@@ -23,7 +23,62 @@ public:
         nlohmann::json gear = nlohmann::json::object();
         nlohmann::json talents = nlohmann::json::object();
         nlohmann::json auras = nlohmann::json::array();
-        nlohmann::json stats = nlohmann::json::array();
+        nlohmann::json stats = {
+            player->GetUInt32Value(UNIT_FIELD_MAXHEALTH),
+            player->GetUInt32Value(UNIT_FIELD_HEALTH),
+            player->GetUInt32Value(UNIT_FIELD_MAXPOWER1),
+            player->GetUInt32Value(UNIT_FIELD_POWER1),
+            player->GetUInt32Value(UNIT_FIELD_STAT0), // strength
+            player->GetUInt32Value(UNIT_FIELD_STAT1), // agility
+            player->GetUInt32Value(UNIT_FIELD_STAT2), // stamina
+            player->GetUInt32Value(UNIT_FIELD_STAT3), // intellect
+            player->GetUInt32Value(UNIT_FIELD_STAT4), // spirit
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES), // armor
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES + 1), // holy
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES + 2), // fire
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES + 3), // nature
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES + 4), // frost
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES + 5), // shadow
+            player->GetUInt32Value(UNIT_FIELD_RESISTANCES + 6), // arcane
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 1), // defense but weird value
+            player->GetFloatValue(PLAYER_FIELD_COMBAT_RATING_1 + 2), // dodge rating
+            player->GetFloatValue(PLAYER_DODGE_PERCENTAGE),
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 3), // parry rating
+            player->GetFloatValue(PLAYER_PARRY_PERCENTAGE),
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 4), // block rating
+            player->GetFloatValue(PLAYER_BLOCK_PERCENTAGE),
+            player->GetUInt32Value(PLAYER_SHIELD_BLOCK),
+            player->GetUInt32Value(PLAYER_EXPERTISE),
+            player->GetUInt32Value(PLAYER_OFFHAND_EXPERTISE),
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 5), // hit rating
+            // missing hit chance
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 8), // crit rating
+            player->GetFloatValue(PLAYER_CRIT_PERCENTAGE),
+            player->GetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + 1),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + 2),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + 3),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + 4),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + 5),
+            player->GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1 + 6),
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 17), // haste rating
+            player->GetFloatValue(UNIT_MOD_CAST_SPEED),
+            player->GetFloatValue(UNIT_FIELD_MINDAMAGE),
+            player->GetFloatValue(UNIT_FIELD_MAXDAMAGE),
+            player->GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE),
+            player->GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE),
+            player->GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE),
+            player->GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE),
+            player->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME),
+            player->GetUInt32Value(UNIT_FIELD_BASEATTACKTIME + 1),
+            player->GetUInt32Value(UNIT_FIELD_RANGEDATTACKTIME),
+            player->GetUInt32Value(UNIT_FIELD_ATTACK_POWER),
+            player->GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER),
+            player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 24), // armor pene
+            // missing spell power
+            // missing mana regen
+        };
 
         for (int i = 0; i <= 18; i++) {
             Item *item = player->GetItemByPos(255, i);
@@ -118,10 +173,6 @@ public:
             player->GetInstanceId(),
             player->GetGUID().GetRawValue(),
             ENCOUNTER_LOG_STATE_START,
-            player->GetMaxHealth(),
-            player->GetHealth(),
-            player->GetMaxPower(POWER_ALL),
-            player->GetPower(POWER_ALL),
             gear.dump(),
             talents.dump(),
             auras.dump(),
@@ -138,20 +189,25 @@ public:
 
         EncounterLogManager::deletePlayerCombat(player);
 
+        nlohmann::json stats = nlohmann::json::array(
+            {
+                player->GetMaxHealth(),
+                player->GetHealth(),
+                player->GetMaxPower(POWER_ALL),
+                player->GetPower(POWER_ALL),
+            }
+        );
+
         if (EncounterLogManager::hasLog(player->GetInstanceId())) {
             EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushCombat(
                 player->GetMapId(),
                 player->GetInstanceId(),
                 player->GetGUID().GetRawValue(),
                 ENCOUNTER_LOG_STATE_END,
-                player->GetMaxHealth(),
-                player->GetHealth(),
-                player->GetMaxPower(POWER_ALL),
-                player->GetPower(POWER_ALL),
                 "",
                 "",
                 "",
-                "",
+                stats.dump(),
                 EncounterLogHelpers::getTimestamp()
             );
         }
