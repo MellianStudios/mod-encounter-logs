@@ -45,11 +45,6 @@ public:
         );
     }
 
-    void OnBeforeClearExpiredInstancesOnLoadInstances() override
-    {
-        EncounterLogManager::startInstanceTracker();
-    }
-
     void OnChangeUpdateData(Object *object, uint16 index, uint64 value) override
     {
         if (Unit *unit = object->ToUnit()) {
@@ -57,11 +52,14 @@ public:
                 return;
             }
 
-            auto owner = EncounterLogHelpers::getOwnerRecursively(unit);
-
             if (unit->IsPlayer()) {
                 switch (index) {
                     case 24:
+                        if (object->m_encounter_log_previous_health != value) {
+                            EncounterLogHelpers::storePower(unit, index, value);
+                        }
+
+                        break;
                     case 25:
                     case 26:
                     case 27:
@@ -69,44 +67,48 @@ public:
                     case 29:
                     case 30:
                     case 31:
+                        if (object->m_encounter_log_previous_power != value) {
+                            EncounterLogHelpers::storePower(unit, index, value);
+                        }
+
+                        break;
                     case 32:
+                        if (object->m_encounter_log_previous_max_health != value) {
+                            EncounterLogHelpers::storePower(unit, index, value);
+                        }
+
+                        break;
+                    case 33:
                     case 34:
                     case 35:
                     case 36:
                     case 37:
                     case 38:
                     case 39:
-                        EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushPower(
-                            unit->GetMapId(),
-                            unit->GetInstanceId(),
-                            EncounterLogHelpers::getGuid(owner),
-                            EncounterLogHelpers::getUnitType(owner),
-                            EncounterLogHelpers::getGuid(unit),
-                            EncounterLogHelpers::getUnitType(unit),
-                            EncounterLogHelpers::getPowerFlag(index),
-                            value,
-                            index >= 32,
-                            EncounterLogHelpers::getTimestamp()
-                        );
+                        if (object->m_encounter_log_previous_max_power != value) {
+                            EncounterLogHelpers::storePower(unit, index, value);
+                        }
 
                         break;
                     default:
                         return;
                 }
             } else {
-                if (index == 24 || index == 32) {
-                    EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushPower(
-                        unit->GetMapId(),
-                        unit->GetInstanceId(),
-                        EncounterLogHelpers::getGuid(owner),
-                        EncounterLogHelpers::getUnitType(owner),
-                        EncounterLogHelpers::getGuid(unit),
-                        EncounterLogHelpers::getUnitType(unit),
-                        ENCOUNTER_LOG_FLAG_POWER_HEALTH,
-                        value,
-                        index == 32,
-                        EncounterLogHelpers::getTimestamp()
-                    );
+                switch (index) {
+                    case 24:
+                        if (object->m_encounter_log_previous_health != value) {
+                            EncounterLogHelpers::storePower(unit, index, value);
+                        }
+
+                        break;
+                    case 32:
+                        if (object->m_encounter_log_previous_max_health != value) {
+                            EncounterLogHelpers::storePower(unit, index, value);
+                        }
+
+                        break;
+                    default:
+                        return;
                 }
             }
         }

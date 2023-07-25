@@ -2065,6 +2065,8 @@ public:
     }
 
     [[nodiscard]] static inline bool shouldNotBeTracked(Unit *unit, bool check_threat_list = true);
+
+    static inline void storePower(Unit *unit, uint16 index, uint64 value);
 };
 
 class EncounterLogActiveInstanceTracker
@@ -2072,63 +2074,42 @@ class EncounterLogActiveInstanceTracker
 private:
     std::thread m_tracker;
     std::atomic<bool> m_stop_tracker{false};
-    // this is not protected from data race
-    // DO NOT WORK WITH THIS VARIABLE ANYWHERE OUTSIDE OF THREAD
-    std::unordered_map<std::uint_fast32_t, std::uint_fast32_t> m_active_instances{};
 
 public:
     EncounterLogActiveInstanceTracker()
     {
-        QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance");
-
-        if (instances) {
-            do {
-                Field *instance = instances->Fetch();
-
-                m_active_instances.insert(
-                    {
-                        instance[0].Get<std::uint_fast32_t>(),
-                        instance[1].Get<std::uint_fast32_t>()
-                    }
-                );
-
-            } while (instances->NextRow());
-        }
-
         m_tracker = std::thread([&]() {
             while (!m_stop_tracker) {
-                std::this_thread::sleep_for(60s);
+                QueryResult unfinished_instances = LoginDatabase.Query(
+                    "SELECT start.* FROM encounter_logs start WHERE NOT EXISTS ("
+                    "SELECT 1 FROM encounter_log_instance_resets end WHERE end.map_id = start.map_id AND end.instance_id = start.instance_id AND end.timestamp >= start.timestamp"
+                    ")"
+                );
 
-                QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance");
-
-                std::unordered_map<std::uint_fast32_t, std::uint_fast32_t> expired_instances = m_active_instances;
-
-                if (instances) {
+                if (unfinished_instances) {
                     do {
-                        Field *instance = instances->Fetch();
+                        Field *unfinished_instance = unfinished_instances->Fetch();
 
-                        std::uint_fast32_t instance_id = instance[0].Get<std::uint_fast32_t>();
+                        auto map_id = unfinished_instance[0].Get<std::uint_fast32_t>();
+                        auto instance_id = unfinished_instance[1].Get<std::uint_fast32_t>();
 
-                        if (expired_instances.count(instance_id)) {
-                            expired_instances.erase(instance_id);
-                        } else {
-                            m_active_instances.insert({instance_id, instance[1].Get<std::uint_fast32_t>()});
+                        QueryResult instance = CharacterDatabase.Query(
+                            "SELECT id, map FROM instance i WHERE map = {} AND id = {} AND EXISTS (SELECT 1 FROM character_instance ch WHERE ch.instance = i.id)",
+                            map_id,
+                            instance_id
+                        );
+
+                        if (!instance) {
+                            LoginDatabase.Execute(
+                                "INSERT INTO encounter_log_instance_resets (map_id, instance_id, timestamp) VALUES (" +
+                                std::to_string(map_id) + "," + std::to_string(instance_id) + "," +
+                                std::to_string(EncounterLogHelpers::getTimestamp()) + ")"
+                            );
                         }
-
-                    } while (instances->NextRow());
+                    } while (unfinished_instances->NextRow());
                 }
 
-                std::uint_fast64_t timestamp = EncounterLogHelpers::getTimestamp();
-
-                for (auto [instance_id, map_id]: expired_instances) {
-                    LoginDatabase.Execute(
-                        "INSERT INTO encounter_log_instance_resets (map_id, instance_id, timestamp) VALUES (" +
-                        std::to_string(map_id) + "," + std::to_string(instance_id) + "," +
-                        std::to_string(timestamp) + ")"
-                    );
-
-                    m_active_instances.erase(instance_id);
-                }
+                std::this_thread::sleep_for(60s);
             }
         });
     }
@@ -2154,7 +2135,8 @@ private:
 public:
     static void init()
     {
-        QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance");
+        QueryResult instances = CharacterDatabase.Query(
+            "SELECT id, map FROM instance i WHERE EXISTS (SELECT 1 FROM character_instance ch WHERE ch.instance = i.id)");
 
         if (instances) {
             do {
@@ -2183,6 +2165,8 @@ public:
 
             m_open_world_tracking = true;
         }
+
+        m_instance_tracker = std::make_unique<EncounterLogActiveInstanceTracker>();
     }
 
     static void newLog(
@@ -2214,11 +2198,6 @@ public:
         }
 
         return result;
-    }
-
-    static void startInstanceTracker()
-    {
-        m_instance_tracker = std::make_unique<EncounterLogActiveInstanceTracker>();
     }
 
     [[nodiscard]] static EncounterLogs *getLog(std::uint_fast32_t instance_id)
@@ -2301,6 +2280,24 @@ inline bool EncounterLogHelpers::shouldNotBeTracked(Unit *unit, bool check_threa
     }
 
     return false;
+}
+
+inline void EncounterLogHelpers::storePower(Unit *unit, uint16 index, uint64 value)
+{
+    auto owner = EncounterLogHelpers::getOwnerRecursively(unit);
+
+    EncounterLogManager::getLog(unit->GetInstanceId())->getBuffer().pushPower(
+        unit->GetMapId(),
+        unit->GetInstanceId(),
+        EncounterLogHelpers::getGuid(owner),
+        EncounterLogHelpers::getUnitType(owner),
+        EncounterLogHelpers::getGuid(unit),
+        EncounterLogHelpers::getUnitType(unit),
+        EncounterLogHelpers::getPowerFlag(index),
+        value,
+        index >= 32,
+        EncounterLogHelpers::getTimestamp()
+    );
 }
 
 #endif //AZEROTHCORE_ENCOUNTERLOGMANAGER_H

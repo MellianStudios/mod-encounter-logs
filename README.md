@@ -26,7 +26,7 @@ For all options see config
 - stats (at combat start)
 - movement
 - death
-- power
+- power (including health)
 - spells
 
 player tracking is always ON in instances
@@ -35,6 +35,7 @@ player tracking is always ON in instances
 
 - spells
 - movement
+- health
 - death
 
 ### Please note that this module currently does not have any respect for phases so if there is fights happening in different phases of same map there is no way to distinguish them
@@ -43,9 +44,10 @@ player tracking is always ON in instances
 
 ## Requirements
 1. This module relies on multiple hooks which are not present in AC
-2. This module depends on nlhomann/json library which is not present in AC
+2. This module works with custom member variables added to core
+3. This module depends on nlhomann/json library which is not present in AC
 
-> you can find library integration and hooks here https://github.com/MellianStudios/azerothcore-wotlk/tree/encounter-logs
+> you can find all of it here https://github.com/MellianStudios/azerothcore-wotlk/tree/encounter-logs
 ---
 
 ## Credits / contributors
