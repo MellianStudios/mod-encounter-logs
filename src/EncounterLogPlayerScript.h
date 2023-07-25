@@ -76,8 +76,16 @@ public:
             player->GetUInt32Value(UNIT_FIELD_ATTACK_POWER),
             player->GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER),
             player->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + 24), // armor pene
-            // missing spell power
-            // missing mana regen
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS), // spell power
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + 1),
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + 2),
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + 3),
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + 4),
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + 5),
+            player->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + 6),
+            player->GetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS), // healing spell power
+            player->GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER),
+            player->GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER),
         };
 
         for (int i = 0; i <= 18; i++) {
@@ -189,14 +197,12 @@ public:
 
         EncounterLogManager::deletePlayerCombat(player);
 
-        nlohmann::json stats = nlohmann::json::array(
-            {
-                player->GetMaxHealth(),
-                player->GetHealth(),
-                player->GetMaxPower(POWER_ALL),
-                player->GetPower(POWER_ALL),
-            }
-        );
+        nlohmann::json stats = {
+            player->GetUInt32Value(UNIT_FIELD_MAXHEALTH),
+            player->GetUInt32Value(UNIT_FIELD_HEALTH),
+            player->GetUInt32Value(UNIT_FIELD_MAXPOWER1),
+            player->GetUInt32Value(UNIT_FIELD_POWER1),
+        };
 
         if (EncounterLogManager::hasLog(player->GetInstanceId())) {
             EncounterLogManager::getLog(player->GetInstanceId())->getBuffer().pushCombat(

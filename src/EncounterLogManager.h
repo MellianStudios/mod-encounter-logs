@@ -1008,7 +1008,7 @@ private:
 
         for (const auto &count: result) {
             LoginDatabase.Execute(
-                "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, stats, talents, auras, timestamp) VALUES " +
+                "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, auras, stats, timestamp) VALUES " +
                 m_buffer.retrieveCombats(count)
             );
         }
