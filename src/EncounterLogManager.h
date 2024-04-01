@@ -15,1156 +15,27 @@
 #include "Unit.h"
 #include "EncounterLogDefines.h"
 
+#if __has_include(<cassandra.h>)
+
+#include "ScyllaDBManager.h"
+
+#endif
+
 // Note that these data types here are irrelevant since on most of modern computers all of them will be implemented as "long"
-
-class EncounterLogCombat
-{
-private:
-    std::uint_fast16_t map_id;
-    std::uint_fast16_t instance_id;
-    std::uint_fast32_t guid;
-    EncounterLogState state;
-    std::string gear;
-    std::string talents;
-    std::string auras;
-    std::string stats;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogCombat(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t guid,
-        EncounterLogState state,
-        std::string gear,
-        std::string talents,
-        std::string auras,
-        std::string stats,
-        std::uint_fast64_t timestamp
-    )
-        : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, gear{std::move(gear)},
-        talents{std::move(talents)}, auras{std::move(auras)}, stats{std::move(stats)}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result{"("};
-
-        result.append(std::to_string(map_id));
-        result.append(",");
-        result.append(std::to_string(instance_id));
-        result.append(",");
-        result.append(std::to_string(guid));
-        result.append(",");
-        result.append(std::to_string(state));
-        result.append(",");
-        result.append(gear.empty() ? "null" : "'" + gear + "'");
-        result.append(",");
-        result.append(talents.empty() ? "null" : "'" + talents + "'");
-        result.append(",");
-        result.append(auras.empty() ? "null" : "'" + auras + "'");
-        result.append(",");
-        result.append(stats.empty() ? "null" : "'" + stats + "'");
-        result.append(",");
-        result.append(std::to_string(timestamp));
-        result.append(")");
-
-        return result;
-    }
-};
-
-class EncounterLogSpell
-{
-private:
-    std::uint_fast16_t map_id;
-    std::uint_fast16_t instance_id;
-    std::uint_fast32_t spell_id;
-    std::uint_fast32_t caster_owner_guid;
-    EncounterLogUnitType caster_owner_type;
-    std::uint_fast32_t caster_guid;
-    EncounterLogUnitType caster_type;
-    std::uint_fast32_t target_owner_guid;
-    EncounterLogUnitType target_owner_type;
-    std::uint_fast32_t target_guid;
-    EncounterLogUnitType target_type;
-    std::uint_fast32_t value;
-    std::uint_fast32_t over_value;
-    std::uint_fast32_t absorb_value;
-    std::uint_fast32_t resist_value;
-    std::uint_fast32_t block_value;
-    bool is_critical;
-    bool is_positive;
-    EncounterLogSpellResult result;
-    EncounterLogSpellFlag flag;
-    EncounterLogArbitraryFlag arbitrary_flag;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogSpell(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t spell_id,
-        std::uint_fast32_t caster_owner_guid,
-        EncounterLogUnitType caster_owner_type,
-        std::uint_fast32_t caster_guid,
-        EncounterLogUnitType caster_type,
-        std::uint_fast32_t target_owner_guid,
-        EncounterLogUnitType target_owner_type,
-        std::uint_fast32_t target_guid,
-        EncounterLogUnitType target_type,
-        std::uint_fast32_t value,
-        std::uint_fast32_t over_value,
-        std::uint_fast32_t absorb_value,
-        std::uint_fast32_t resist_value,
-        std::uint_fast32_t block_value,
-        bool is_critical,
-        bool is_positive,
-        EncounterLogSpellResult result,
-        EncounterLogSpellFlag flag,
-        EncounterLogArbitraryFlag arbitrary_flag,
-        std::uint_fast64_t timestamp
-    )
-        : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
-        caster_owner_type{caster_owner_type}, caster_guid{caster_guid}, caster_type{caster_type},
-        target_owner_guid{target_owner_guid}, target_owner_type{target_owner_type}, target_guid{target_guid},
-        target_type{target_type}, value{value}, over_value{over_value}, absorb_value{absorb_value},
-        resist_value{resist_value}, block_value{block_value}, is_critical{is_critical}, is_positive{is_positive},
-        result{result}, flag{flag}, arbitrary_flag{arbitrary_flag}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result_string{"("};
-
-        bool has_caster_owner{caster_owner_guid != caster_guid && caster_owner_guid != 0};
-        bool has_target_owner{target_owner_guid != target_guid && target_owner_guid != 0};
-
-        result_string.append(std::to_string(map_id));
-        result_string.append(",");
-        result_string.append(std::to_string(instance_id));
-        result_string.append(",");
-        result_string.append(std::to_string(spell_id));
-        result_string.append(",");
-        result_string.append(has_caster_owner ? std::to_string(caster_owner_guid) : "0");
-        result_string.append(",");
-        result_string.append(has_caster_owner ? std::to_string(caster_owner_type) : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(caster_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(caster_type));
-        result_string.append(",");
-        result_string.append(has_target_owner ? std::to_string(target_owner_guid) : "0");
-        result_string.append(",");
-        result_string.append(has_target_owner ? std::to_string(target_owner_type) : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(target_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(target_type));
-        result_string.append(",");
-        result_string.append(std::to_string(value));
-        result_string.append(",");
-        result_string.append(std::to_string(over_value));
-        result_string.append(",");
-        result_string.append(std::to_string(absorb_value));
-        result_string.append(",");
-        result_string.append(std::to_string(resist_value));
-        result_string.append(",");
-        result_string.append(std::to_string(block_value));
-        result_string.append(",");
-        result_string.append(is_critical ? "1" : "0");
-        result_string.append(",");
-        result_string.append(is_positive ? "1" : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(result));
-        result_string.append(",");
-        result_string.append(std::to_string(flag));
-        result_string.append(",");
-        result_string.append(std::to_string(arbitrary_flag));
-        result_string.append(",");
-        result_string.append(std::to_string(timestamp));
-        result_string.append(")");
-
-        return result_string;
-    }
-};
-
-class EncounterLogMovement
-{
-private:
-    std::uint_fast16_t map_id;
-    std::uint_fast16_t instance_id;
-    std::uint_fast32_t owner_guid;
-    EncounterLogUnitType owner_type;
-    std::uint_fast32_t guid;
-    EncounterLogUnitType type;
-    double x;
-    double y;
-    double z;
-    double o;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogMovement(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t owner_guid,
-        EncounterLogUnitType owner_type,
-        std::uint_fast32_t guid,
-        EncounterLogUnitType type,
-        double x,
-        double y,
-        double z,
-        double o,
-        std::uint_fast64_t timestamp
-    )
-        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
-        type{type}, x{x}, y{y}, z{z}, o{o}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result_string{"("};
-
-        bool has_owner{owner_guid != guid && owner_guid != 0};
-
-        result_string.append(std::to_string(map_id));
-        result_string.append(",");
-        result_string.append(std::to_string(instance_id));
-        result_string.append(",");
-        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
-        result_string.append(",");
-        result_string.append(has_owner ? std::to_string(owner_type) : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(guid));
-        result_string.append(",");
-        result_string.append(std::to_string(type));
-        result_string.append(",");
-        result_string.append(std::to_string(x));
-        result_string.append(",");
-        result_string.append(std::to_string(y));
-        result_string.append(",");
-        result_string.append(std::to_string(z));
-        result_string.append(",");
-        result_string.append(std::to_string(o));
-        result_string.append(",");
-        result_string.append(std::to_string(timestamp));
-        result_string.append(")");
-
-        return result_string;
-    }
-};
-
-class EncounterLogDeath
-{
-private:
-    std::uint_fast16_t map_id;
-    std::uint_fast16_t instance_id;
-    std::uint_fast32_t owner_guid;
-    EncounterLogUnitType owner_type;
-    std::uint_fast32_t guid;
-    EncounterLogUnitType type;
-    std::uint_fast32_t killer_owner_guid;
-    EncounterLogUnitType killer_owner_type;
-    std::uint_fast32_t killer_guid;
-    EncounterLogUnitType killer_type;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogDeath(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t owner_guid,
-        EncounterLogUnitType owner_type,
-        std::uint_fast32_t guid,
-        EncounterLogUnitType type,
-        std::uint_fast32_t killer_owner_guid,
-        EncounterLogUnitType killer_owner_type,
-        std::uint_fast32_t killer_guid,
-        EncounterLogUnitType killer_type,
-        std::uint_fast64_t timestamp
-    )
-        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
-        type{type}, killer_owner_guid{killer_owner_guid}, killer_owner_type{killer_owner_type},
-        killer_guid{killer_guid}, killer_type{killer_type}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result_string{"("};
-
-        bool has_owner{owner_guid != guid && owner_guid != 0};
-        bool has_killer_owner{killer_owner_guid != killer_guid && killer_owner_guid != 0};
-
-        result_string.append(std::to_string(map_id));
-        result_string.append(",");
-        result_string.append(std::to_string(instance_id));
-        result_string.append(",");
-        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
-        result_string.append(",");
-        result_string.append(has_owner ? std::to_string(owner_type) : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(guid));
-        result_string.append(",");
-        result_string.append(std::to_string(type));
-        result_string.append(",");
-        result_string.append(has_killer_owner ? std::to_string(killer_owner_guid) : "0");
-        result_string.append(",");
-        result_string.append(has_killer_owner ? std::to_string(killer_owner_type) : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(killer_guid));
-        result_string.append(",");
-        result_string.append(std::to_string(killer_type));
-        result_string.append(",");
-        result_string.append(std::to_string(timestamp));
-        result_string.append(")");
-
-        return result_string;
-    }
-};
-
-class EncounterLogPower
-{
-private:
-    std::uint_fast16_t map_id;
-    std::uint_fast16_t instance_id;
-    std::uint_fast32_t owner_guid;
-    EncounterLogUnitType owner_type;
-    std::uint_fast32_t guid;
-    EncounterLogUnitType type;
-    EncounterLogSpellFlag power_type;
-    std::uint_fast32_t value;
-    bool is_max;
-    std::uint_fast64_t timestamp;
-
-public:
-    EncounterLogPower(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t owner_guid,
-        EncounterLogUnitType owner_type,
-        std::uint_fast32_t guid,
-        EncounterLogUnitType type,
-        EncounterLogSpellFlag power_type,
-        std::uint_fast32_t value,
-        bool is_max,
-        std::uint_fast64_t timestamp
-    )
-        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
-        type{type}, power_type{power_type}, value{value}, is_max{is_max}, timestamp{timestamp}
-    {}
-
-    [[nodiscard]] std::string asString() const
-    {
-        std::string result_string{"("};
-
-        bool has_owner{owner_guid != guid && owner_guid != 0};
-
-        result_string.append(std::to_string(map_id));
-        result_string.append(",");
-        result_string.append(std::to_string(instance_id));
-        result_string.append(",");
-        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
-        result_string.append(",");
-        result_string.append(has_owner ? std::to_string(owner_type) : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(guid));
-        result_string.append(",");
-        result_string.append(std::to_string(type));
-        result_string.append(",");
-        result_string.append(std::to_string(power_type));
-        result_string.append(",");
-        result_string.append(std::to_string(value));
-        result_string.append(",");
-        result_string.append(is_max ? "1" : "0");
-        result_string.append(",");
-        result_string.append(std::to_string(timestamp));
-        result_string.append(")");
-
-        return result_string;
-    }
-};
-
-class Circumrota
-{
-private:
-    std::atomic<bool> branch{false};
-    std::unordered_map<std::uint_fast64_t, EncounterLogCombat> combat_buffer_0;
-    std::unordered_map<std::uint_fast64_t, EncounterLogCombat> combat_buffer_1;
-    std::atomic<std::uint_fast64_t> combat_first_0{1};
-    std::atomic<std::uint_fast64_t> combat_last_0{1};
-    std::atomic<std::uint_fast64_t> combat_first_1{1};
-    std::atomic<std::uint_fast64_t> combat_last_1{1};
-    std::unordered_map<std::uint_fast64_t, EncounterLogSpell> spell_buffer_0;
-    std::unordered_map<std::uint_fast64_t, EncounterLogSpell> spell_buffer_1;
-    std::atomic<std::uint_fast64_t> spell_first_0{1};
-    std::atomic<std::uint_fast64_t> spell_last_0{1};
-    std::atomic<std::uint_fast64_t> spell_first_1{1};
-    std::atomic<std::uint_fast64_t> spell_last_1{1};
-    std::unordered_map<std::uint_fast64_t, EncounterLogMovement> movement_buffer_0;
-    std::unordered_map<std::uint_fast64_t, EncounterLogMovement> movement_buffer_1;
-    std::atomic<std::uint_fast64_t> movement_first_0{1};
-    std::atomic<std::uint_fast64_t> movement_last_0{1};
-    std::atomic<std::uint_fast64_t> movement_first_1{1};
-    std::atomic<std::uint_fast64_t> movement_last_1{1};
-    std::unordered_map<std::uint_fast64_t, EncounterLogDeath> death_buffer_0;
-    std::unordered_map<std::uint_fast64_t, EncounterLogDeath> death_buffer_1;
-    std::atomic<std::uint_fast64_t> death_first_0{1};
-    std::atomic<std::uint_fast64_t> death_last_0{1};
-    std::atomic<std::uint_fast64_t> death_first_1{1};
-    std::atomic<std::uint_fast64_t> death_last_1{1};
-    std::unordered_map<std::uint_fast64_t, EncounterLogPower> power_buffer_0;
-    std::unordered_map<std::uint_fast64_t, EncounterLogPower> power_buffer_1;
-    std::atomic<std::uint_fast64_t> power_first_0{1};
-    std::atomic<std::uint_fast64_t> power_last_0{1};
-    std::atomic<std::uint_fast64_t> power_first_1{1};
-    std::atomic<std::uint_fast64_t> power_last_1{1};
-
-public:
-    void switchBranch()
-    {
-        branch = !branch;
-    }
-
-    void pushCombat(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t guid,
-        EncounterLogState state,
-        std::string gear,
-        std::string talents,
-        std::string auras,
-        std::string stats,
-        std::uint_fast64_t timestamp
-    )
-    {
-        if (branch) {
-            combat_buffer_1.insert({combat_first_1, {
-                map_id,
-                instance_id,
-                guid,
-                state,
-                std::move(gear),
-                std::move(talents),
-                std::move(auras),
-                std::move(stats),
-                timestamp
-            }});
-
-            combat_first_1++;
-
-            return;
-        }
-
-        combat_buffer_0.insert({combat_first_0, {
-            map_id,
-            instance_id,
-            guid,
-            state,
-            std::move(gear),
-            std::move(talents),
-            std::move(auras),
-            std::move(stats),
-            timestamp
-        }});
-
-        combat_first_0++;
-    }
-
-    [[nodiscard]] std::string retrieveCombats(std::size_t count)
-    {
-        if (branch) {
-            count = std::min(count, combat_buffer_0.size());
-
-            std::string result;
-            result.reserve(count * 40);
-
-            std::uint_fast32_t i{1};
-
-            while (i <= count) {
-                result.append(combat_buffer_0.at(combat_last_0).asString());
-
-                if (i != count) {
-                    result.append(",");
-                }
-
-                combat_buffer_0.erase(combat_last_0);
-                i++;
-                combat_last_0++;
-            }
-
-            return result;
-        }
-
-        count = std::min(count, combat_buffer_1.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(combat_buffer_1.at(combat_last_1).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            combat_buffer_1.erase(combat_last_1);
-            i++;
-            combat_last_1++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getCombatBufferSize()
-    {
-        if (branch) {
-            return combat_buffer_0.size();
-        }
-
-        return combat_buffer_1.size();
-    }
-
-    void pushSpell(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t spell_id,
-        std::uint_fast32_t caster_owner_guid,
-        EncounterLogUnitType caster_owner_type,
-        std::uint_fast32_t caster_guid,
-        EncounterLogUnitType caster_type,
-        std::uint_fast32_t target_owner_guid,
-        EncounterLogUnitType target_owner_type,
-        std::uint_fast32_t target_guid,
-        EncounterLogUnitType target_type,
-        std::uint_fast32_t value,
-        std::uint_fast32_t over_value,
-        std::uint_fast32_t absorb_value,
-        std::uint_fast32_t resist_value,
-        std::uint_fast32_t block_value,
-        bool is_critical,
-        bool is_positive,
-        EncounterLogSpellResult result,
-        EncounterLogSpellFlag flag,
-        EncounterLogArbitraryFlag arbitrary_flag,
-        std::uint_fast64_t timestamp
-    )
-    {
-        if (branch) {
-            spell_buffer_1.insert({spell_first_1, {
-                map_id,
-                instance_id,
-                spell_id,
-                caster_owner_guid,
-                caster_owner_type,
-                caster_guid,
-                caster_type,
-                target_owner_guid,
-                target_owner_type,
-                target_guid,
-                target_type,
-                value,
-                over_value,
-                absorb_value,
-                resist_value,
-                block_value,
-                is_critical,
-                is_positive,
-                result,
-                flag,
-                arbitrary_flag,
-                timestamp
-            }});
-
-            spell_first_1++;
-
-            return;
-        }
-
-        spell_buffer_0.insert({spell_first_0, {
-            map_id,
-            instance_id,
-            spell_id,
-            caster_owner_guid,
-            caster_owner_type,
-            caster_guid,
-            caster_type,
-            target_owner_guid,
-            target_owner_type,
-            target_guid,
-            target_type,
-            value,
-            over_value,
-            absorb_value,
-            resist_value,
-            block_value,
-            is_critical,
-            is_positive,
-            result,
-            flag,
-            arbitrary_flag,
-            timestamp
-        }});
-
-        spell_first_0++;
-    }
-
-    [[nodiscard]] std::string retrieveSpells(std::size_t count)
-    {
-        if (branch) {
-            count = std::min(count, spell_buffer_0.size());
-
-            std::string result;
-            result.reserve(count * 40);
-
-            std::uint_fast32_t i{1};
-
-            while (i <= count) {
-                result.append(spell_buffer_0.at(spell_last_0).asString());
-
-                if (i != count) {
-                    result.append(",");
-                }
-
-                spell_buffer_0.erase(spell_last_0);
-                i++;
-                spell_last_0++;
-            }
-
-            return result;
-        }
-
-        count = std::min(count, spell_buffer_1.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(spell_buffer_1.at(spell_last_1).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            spell_buffer_1.erase(spell_last_1);
-            i++;
-            spell_last_1++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getSpellBufferSize()
-    {
-        if (branch) {
-            return spell_buffer_0.size();
-        }
-
-        return spell_buffer_1.size();
-    }
-
-    void pushMovement(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t owner_guid,
-        EncounterLogUnitType owner_type,
-        std::uint_fast32_t guid,
-        EncounterLogUnitType type,
-        double x,
-        double y,
-        double z,
-        double o,
-        std::uint_fast64_t timestamp
-    )
-    {
-        if (branch) {
-            movement_buffer_1.insert({movement_first_1, {
-                map_id,
-                instance_id,
-                owner_guid,
-                owner_type,
-                guid,
-                type,
-                x,
-                y,
-                z,
-                o,
-                timestamp
-            }});
-
-            movement_first_1++;
-        }
-
-        movement_buffer_0.insert({movement_first_0, {
-            map_id,
-            instance_id,
-            owner_guid,
-            owner_type,
-            guid,
-            type,
-            x,
-            y,
-            z,
-            o,
-            timestamp
-        }});
-
-        movement_first_0++;
-    }
-
-    [[nodiscard]] std::string retrieveMovements(std::size_t count)
-    {
-        if (branch) {
-            count = std::min(count, movement_buffer_0.size());
-
-            std::string result;
-            result.reserve(count * 40);
-
-            std::uint_fast32_t i{1};
-
-            while (i <= count) {
-                result.append(movement_buffer_0.at(movement_last_0).asString());
-
-                if (i != count) {
-                    result.append(",");
-                }
-
-                movement_buffer_0.erase(movement_last_0);
-                i++;
-                movement_last_0++;
-            }
-
-            return result;
-        }
-
-        count = std::min(count, movement_buffer_1.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(movement_buffer_1.at(movement_last_1).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            movement_buffer_1.erase(movement_last_1);
-            i++;
-            movement_last_1++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getMovementBufferSize()
-    {
-        if (branch) {
-            return movement_buffer_0.size();
-        }
-
-        return movement_buffer_1.size();
-    }
-
-    void pushDeath(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t owner_guid,
-        EncounterLogUnitType owner_type,
-        std::uint_fast32_t guid,
-        EncounterLogUnitType type,
-        std::uint_fast32_t killer_owner_guid,
-        EncounterLogUnitType killer_owner_type,
-        std::uint_fast32_t killer_guid,
-        EncounterLogUnitType killer_type,
-        std::uint_fast64_t timestamp
-    )
-    {
-        if (branch) {
-            death_buffer_1.insert({death_first_1, {
-                map_id,
-                instance_id,
-                owner_guid,
-                owner_type,
-                guid,
-                type,
-                killer_owner_guid,
-                killer_owner_type,
-                killer_guid,
-                killer_type,
-                timestamp
-            }});
-
-            death_first_1++;
-        }
-
-        death_buffer_0.insert({death_first_0, {
-            map_id,
-            instance_id,
-            owner_guid,
-            owner_type,
-            guid,
-            type,
-            killer_owner_guid,
-            killer_owner_type,
-            killer_guid,
-            killer_type,
-            timestamp
-        }});
-
-        death_first_0++;
-    }
-
-    [[nodiscard]] std::string retrieveDeaths(std::size_t count)
-    {
-        if (branch) {
-            count = std::min(count, death_buffer_0.size());
-
-            std::string result;
-            result.reserve(count * 40);
-
-            std::uint_fast32_t i{1};
-
-            while (i <= count) {
-                result.append(death_buffer_0.at(death_last_0).asString());
-
-                if (i != count) {
-                    result.append(",");
-                }
-
-                death_buffer_0.erase(death_last_0);
-                i++;
-                death_last_0++;
-            }
-
-            return result;
-        }
-
-        count = std::min(count, death_buffer_1.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(death_buffer_1.at(death_last_1).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            death_buffer_1.erase(death_last_1);
-            i++;
-            death_last_1++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getDeathBufferSize()
-    {
-        if (branch) {
-            return death_buffer_0.size();
-        }
-
-        return death_buffer_1.size();
-    }
-
-    void pushPower(
-        std::uint_fast16_t map_id,
-        std::uint_fast16_t instance_id,
-        std::uint_fast32_t owner_guid,
-        EncounterLogUnitType owner_type,
-        std::uint_fast32_t guid,
-        EncounterLogUnitType type,
-        EncounterLogSpellFlag power_type,
-        std::uint_fast32_t value,
-        bool is_max,
-        std::uint_fast64_t timestamp
-    )
-    {
-        if (branch) {
-            power_buffer_1.insert({power_first_1, {
-                map_id,
-                instance_id,
-                owner_guid,
-                owner_type,
-                guid,
-                type,
-                power_type,
-                value,
-                is_max,
-                timestamp
-            }});
-
-            power_first_1++;
-        }
-
-        power_buffer_0.insert({power_first_0, {
-            map_id,
-            instance_id,
-            owner_guid,
-            owner_type,
-            guid,
-            type,
-            power_type,
-            value,
-            is_max,
-            timestamp
-        }});
-
-        power_first_0++;
-    }
-
-    [[nodiscard]] std::string retrievePowers(std::size_t count)
-    {
-        if (branch) {
-            count = std::min(count, power_buffer_0.size());
-
-            std::string result;
-            result.reserve(count * 40);
-
-            std::uint_fast32_t i{1};
-
-            while (i <= count) {
-                result.append(power_buffer_0.at(power_last_0).asString());
-
-                if (i != count) {
-                    result.append(",");
-                }
-
-                power_buffer_0.erase(power_last_0);
-                i++;
-                power_last_0++;
-            }
-
-            return result;
-        }
-
-        count = std::min(count, power_buffer_1.size());
-
-        std::string result;
-        result.reserve(count * 40);
-
-        std::uint_fast32_t i{1};
-
-        while (i <= count) {
-            result.append(power_buffer_1.at(power_last_1).asString());
-
-            if (i != count) {
-                result.append(",");
-            }
-
-            power_buffer_1.erase(power_last_1);
-            i++;
-            power_last_1++;
-        }
-
-        return result;
-    }
-
-    [[nodiscard]] std::uint_fast32_t getPowerBufferSize()
-    {
-        if (branch) {
-            return power_buffer_0.size();
-        }
-
-        return power_buffer_1.size();
-    }
-};
-
-class EncounterLogs
-{
-private:
-    std::uint_fast32_t m_batch_size;
-    std::uint_fast32_t m_map_id;
-    std::uint_fast32_t m_instance_id;
-    std::uint_fast64_t m_timestamp;
-    std::thread m_saver;
-    std::atomic<bool> m_stop_saver{false};
-    Circumrota m_buffer;
-
-    void storeCombats()
-    {
-        std::uint_fast32_t buffer_size = m_buffer.getCombatBufferSize();
-
-        std::vector<std::uint_fast32_t> result;
-
-        while (buffer_size >= m_batch_size) {
-            result.push_back(m_batch_size);
-
-            buffer_size -= m_batch_size;
-        }
-
-        if (buffer_size > 0) {
-            result.push_back(buffer_size);
-        }
-
-        for (const auto &count: result) {
-            LoginDatabase.Execute(
-                "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, auras, stats, timestamp) VALUES " +
-                m_buffer.retrieveCombats(count)
-            );
-        }
-    }
-
-    void storeDeaths()
-    {
-        std::uint_fast32_t buffer_size = m_buffer.getDeathBufferSize();
-
-        std::vector<std::uint_fast32_t> result;
-
-        while (buffer_size >= m_batch_size) {
-            result.push_back(m_batch_size);
-
-            buffer_size -= m_batch_size;
-        }
-
-        if (buffer_size > 0) {
-            result.push_back(buffer_size);
-        }
-
-        for (const auto &count: result) {
-            LoginDatabase.Execute(
-                "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, owner_type, guid, type, killer_owner_guid, killer_owner_type, killer_guid, killer_type, `timestamp`) VALUES " +
-                m_buffer.retrieveDeaths(count)
-            );
-        }
-    }
-
-    void storeMovements()
-    {
-        std::uint_fast32_t buffer_size = m_buffer.getMovementBufferSize();
-
-        std::vector<std::uint_fast32_t> result;
-
-        while (buffer_size >= m_batch_size) {
-            result.push_back(m_batch_size);
-
-            buffer_size -= m_batch_size;
-        }
-
-        if (buffer_size > 0) {
-            result.push_back(buffer_size);
-        }
-
-        for (const auto &count: result) {
-            LoginDatabase.Execute(
-                "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, owner_type, guid, type, x, y, z, o, `timestamp`) VALUES " +
-                m_buffer.retrieveMovements(count)
-            );
-        }
-    }
-
-    void storePowers()
-    {
-        std::uint_fast32_t buffer_size = m_buffer.getPowerBufferSize();
-
-        std::vector<std::uint_fast32_t> result;
-
-        while (buffer_size >= m_batch_size) {
-            result.push_back(m_batch_size);
-
-            buffer_size -= m_batch_size;
-        }
-
-        if (buffer_size > 0) {
-            result.push_back(buffer_size);
-        }
-
-        for (const auto &count: result) {
-            LoginDatabase.Execute(
-                "INSERT INTO encounter_log_powers (map_id, instance_id, owner_guid, owner_type, guid, type, power_type, value, is_max, `timestamp`) VALUES " +
-                m_buffer.retrievePowers(count)
-            );
-        }
-    }
-
-    void storeSpells()
-    {
-        std::uint_fast32_t buffer_size = m_buffer.getSpellBufferSize();
-
-        std::vector<std::uint_fast32_t> result;
-
-        while (buffer_size >= m_batch_size) {
-            result.push_back(m_batch_size);
-
-            buffer_size -= m_batch_size;
-        }
-
-        if (buffer_size > 0) {
-            result.push_back(buffer_size);
-        }
-
-        for (const auto &count: result) {
-            LoginDatabase.Execute(
-                "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, arbitrary_flag, timestamp) VALUES " +
-                m_buffer.retrieveSpells(count)
-            );
-        }
-    }
-
-public:
-    EncounterLogs(
-        std::uint_fast32_t map_id,
-        std::uint_fast32_t instance_id,
-        std::uint_fast64_t timestamp,
-        bool with_record = true
-    ) : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
-    {
-        m_batch_size = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.BatchSize", 1000);
-
-        if (with_record) {
-            LoginDatabase.Execute(
-                "INSERT INTO encounter_logs (map_id, instance_id, timestamp) VALUES (" +
-                std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_timestamp) +
-                ")"
-            );
-        }
-
-        m_saver = std::thread([&]() {
-            while (!m_stop_saver) {
-                std::this_thread::sleep_for(
-                    std::chrono::milliseconds(
-                        sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.SaveFrequency", 1000)
-                    )
-                );
-
-                m_buffer.switchBranch();
-
-                std::this_thread::sleep_for(50ms);
-
-                storeCombats();
-                storeDeaths();
-                storeMovements();
-                storePowers();
-                storeSpells();
-            }
-        });
-    }
-
-    ~EncounterLogs()
-    {
-        m_stop_saver = true;
-
-        m_saver.join();
-    }
-
-    Circumrota &getBuffer()
-    {
-        return m_buffer;
-    }
-};
 
 class EncounterLogHelpers
 {
+private:
+    static bool m_is_scylla;
+    static bool m_is_database;
+
 public:
+    static void init()
+    {
+        m_is_scylla = sConfigMgr->GetOption<std::string>("EncounterLogs.General.Database", "database") == "scylladb";
+        m_is_database = sConfigMgr->GetOption<std::string>("EncounterLogs.General.Database", "database") == "database";
+    }
+
     [[nodiscard]] static std::uint_fast32_t getGuid(Unit *unit)
     {
         if (Creature *creature = unit->ToCreature()) {
@@ -2064,9 +935,1283 @@ public:
         }
     }
 
+    [[nodiscard]] static bool isScylla()
+    {
+        return m_is_scylla;
+    }
+
+    [[nodiscard]] static bool isDatabase()
+    {
+        return m_is_database;
+    }
+
     [[nodiscard]] static inline bool shouldNotBeTracked(Unit *unit, bool check_threat_list = true);
 
     static inline void storePower(Unit *unit, uint16 index, uint64 value);
+};
+
+class EncounterLogCombat
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t guid;
+    EncounterLogState state;
+    std::string gear;
+    std::string talents;
+    std::string auras;
+    std::string stats;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogCombat(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t guid,
+        EncounterLogState state,
+        std::string gear,
+        std::string talents,
+        std::string auras,
+        std::string stats,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, guid{guid}, state{state}, gear{std::move(gear)},
+        talents{std::move(talents)}, auras{std::move(auras)}, stats{std::move(stats)}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            result_string.append("{uuid},");
+        }
+#endif
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(state));
+        result_string.append(",");
+        result_string.append(gear.empty() ? "null" : "'" + gear + "'");
+        result_string.append(",");
+        result_string.append(talents.empty() ? "null" : "'" + talents + "'");
+        result_string.append(",");
+        result_string.append(auras.empty() ? "null" : "'" + auras + "'");
+        result_string.append(",");
+        result_string.append(stats.empty() ? "null" : "'" + stats + "'");
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
+class EncounterLogSpell
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t spell_id;
+    std::uint_fast32_t caster_owner_guid;
+    EncounterLogUnitType caster_owner_type;
+    std::uint_fast32_t caster_guid;
+    EncounterLogUnitType caster_type;
+    std::uint_fast32_t target_owner_guid;
+    EncounterLogUnitType target_owner_type;
+    std::uint_fast32_t target_guid;
+    EncounterLogUnitType target_type;
+    std::uint_fast32_t value;
+    std::uint_fast32_t over_value;
+    std::uint_fast32_t absorb_value;
+    std::uint_fast32_t resist_value;
+    std::uint_fast32_t block_value;
+    bool is_critical;
+    bool is_positive;
+    EncounterLogSpellResult result;
+    EncounterLogSpellFlag flag;
+    EncounterLogArbitraryFlag arbitrary_flag;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogSpell(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t spell_id,
+        std::uint_fast32_t caster_owner_guid,
+        EncounterLogUnitType caster_owner_type,
+        std::uint_fast32_t caster_guid,
+        EncounterLogUnitType caster_type,
+        std::uint_fast32_t target_owner_guid,
+        EncounterLogUnitType target_owner_type,
+        std::uint_fast32_t target_guid,
+        EncounterLogUnitType target_type,
+        std::uint_fast32_t value,
+        std::uint_fast32_t over_value,
+        std::uint_fast32_t absorb_value,
+        std::uint_fast32_t resist_value,
+        std::uint_fast32_t block_value,
+        bool is_critical,
+        bool is_positive,
+        EncounterLogSpellResult result,
+        EncounterLogSpellFlag flag,
+        EncounterLogArbitraryFlag arbitrary_flag,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, spell_id{spell_id}, caster_owner_guid{caster_owner_guid},
+        caster_owner_type{caster_owner_type}, caster_guid{caster_guid}, caster_type{caster_type},
+        target_owner_guid{target_owner_guid}, target_owner_type{target_owner_type}, target_guid{target_guid},
+        target_type{target_type}, value{value}, over_value{over_value}, absorb_value{absorb_value},
+        resist_value{resist_value}, block_value{block_value}, is_critical{is_critical}, is_positive{is_positive},
+        result{result}, flag{flag}, arbitrary_flag{arbitrary_flag}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+        bool has_caster_owner{caster_owner_guid != caster_guid && caster_owner_guid != 0};
+        bool has_target_owner{target_owner_guid != target_guid && target_owner_guid != 0};
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            result_string.append("{uuid},");
+        }
+#endif
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(std::to_string(spell_id));
+        result_string.append(",");
+        result_string.append(has_caster_owner ? std::to_string(caster_owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_caster_owner ? std::to_string(caster_owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(caster_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(caster_type));
+        result_string.append(",");
+        result_string.append(has_target_owner ? std::to_string(target_owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_target_owner ? std::to_string(target_owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(target_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(target_type));
+        result_string.append(",");
+        result_string.append(std::to_string(value));
+        result_string.append(",");
+        result_string.append(std::to_string(over_value));
+        result_string.append(",");
+        result_string.append(std::to_string(absorb_value));
+        result_string.append(",");
+        result_string.append(std::to_string(resist_value));
+        result_string.append(",");
+        result_string.append(std::to_string(block_value));
+        result_string.append(",");
+        result_string.append(is_critical ? "true" : "false");
+        result_string.append(",");
+        result_string.append(is_positive ? "true" : "false");
+        result_string.append(",");
+        result_string.append(std::to_string(result));
+        result_string.append(",");
+        result_string.append(std::to_string(flag));
+        result_string.append(",");
+        result_string.append(std::to_string(arbitrary_flag));
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
+class EncounterLogMovement
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t owner_guid;
+    EncounterLogUnitType owner_type;
+    std::uint_fast32_t guid;
+    EncounterLogUnitType type;
+    double x;
+    double y;
+    double z;
+    double o;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogMovement(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        double x,
+        double y,
+        double z,
+        double o,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
+        type{type}, x{x}, y{y}, z{z}, o{o}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+        bool has_owner{owner_guid != guid && owner_guid != 0};
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            result_string.append("{uuid},");
+        }
+#endif
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(type));
+        result_string.append(",");
+        result_string.append(std::to_string(x));
+        result_string.append(",");
+        result_string.append(std::to_string(y));
+        result_string.append(",");
+        result_string.append(std::to_string(z));
+        result_string.append(",");
+        result_string.append(std::to_string(o));
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
+class EncounterLogDeath
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t owner_guid;
+    EncounterLogUnitType owner_type;
+    std::uint_fast32_t guid;
+    EncounterLogUnitType type;
+    std::uint_fast32_t killer_owner_guid;
+    EncounterLogUnitType killer_owner_type;
+    std::uint_fast32_t killer_guid;
+    EncounterLogUnitType killer_type;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogDeath(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        std::uint_fast32_t killer_owner_guid,
+        EncounterLogUnitType killer_owner_type,
+        std::uint_fast32_t killer_guid,
+        EncounterLogUnitType killer_type,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
+        type{type}, killer_owner_guid{killer_owner_guid}, killer_owner_type{killer_owner_type},
+        killer_guid{killer_guid}, killer_type{killer_type}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+        bool has_owner{owner_guid != guid && owner_guid != 0};
+        bool has_killer_owner{killer_owner_guid != killer_guid && killer_owner_guid != 0};
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            result_string.append("{uuid},");
+        }
+#endif
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(type));
+        result_string.append(",");
+        result_string.append(has_killer_owner ? std::to_string(killer_owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_killer_owner ? std::to_string(killer_owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(killer_guid));
+        result_string.append(",");
+        result_string.append(std::to_string(killer_type));
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
+class EncounterLogPower
+{
+private:
+    std::uint_fast16_t map_id;
+    std::uint_fast16_t instance_id;
+    std::uint_fast32_t owner_guid;
+    EncounterLogUnitType owner_type;
+    std::uint_fast32_t guid;
+    EncounterLogUnitType type;
+    EncounterLogSpellFlag power_type;
+    std::uint_fast32_t value;
+    bool is_max;
+    std::uint_fast64_t timestamp;
+
+public:
+    EncounterLogPower(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        EncounterLogSpellFlag power_type,
+        std::uint_fast32_t value,
+        bool is_max,
+        std::uint_fast64_t timestamp
+    )
+        : map_id{map_id}, instance_id{instance_id}, owner_guid{owner_guid}, owner_type{owner_type}, guid{guid},
+        type{type}, power_type{power_type}, value{value}, is_max{is_max}, timestamp{timestamp}
+    {}
+
+    [[nodiscard]] std::string asString() const
+    {
+        std::string result_string{"("};
+
+        bool has_owner{owner_guid != guid && owner_guid != 0};
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            result_string.append("{uuid},");
+        }
+#endif
+
+        result_string.append(std::to_string(map_id));
+        result_string.append(",");
+        result_string.append(std::to_string(instance_id));
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_guid) : "0");
+        result_string.append(",");
+        result_string.append(has_owner ? std::to_string(owner_type) : "0");
+        result_string.append(",");
+        result_string.append(std::to_string(guid));
+        result_string.append(",");
+        result_string.append(std::to_string(type));
+        result_string.append(",");
+        result_string.append(std::to_string(power_type));
+        result_string.append(",");
+        result_string.append(std::to_string(value));
+        result_string.append(",");
+        result_string.append(is_max ? "true" : "false");
+        result_string.append(",");
+        result_string.append(std::to_string(timestamp));
+        result_string.append(")");
+
+        return result_string;
+    }
+};
+
+class Circumrota
+{
+private:
+    std::atomic<bool> branch{false};
+    std::unordered_map<std::uint_fast64_t, EncounterLogCombat> combat_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogCombat> combat_buffer_1;
+    std::atomic<std::uint_fast64_t> combat_first_0{1};
+    std::atomic<std::uint_fast64_t> combat_last_0{1};
+    std::atomic<std::uint_fast64_t> combat_first_1{1};
+    std::atomic<std::uint_fast64_t> combat_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogSpell> spell_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogSpell> spell_buffer_1;
+    std::atomic<std::uint_fast64_t> spell_first_0{1};
+    std::atomic<std::uint_fast64_t> spell_last_0{1};
+    std::atomic<std::uint_fast64_t> spell_first_1{1};
+    std::atomic<std::uint_fast64_t> spell_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogMovement> movement_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogMovement> movement_buffer_1;
+    std::atomic<std::uint_fast64_t> movement_first_0{1};
+    std::atomic<std::uint_fast64_t> movement_last_0{1};
+    std::atomic<std::uint_fast64_t> movement_first_1{1};
+    std::atomic<std::uint_fast64_t> movement_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogDeath> death_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogDeath> death_buffer_1;
+    std::atomic<std::uint_fast64_t> death_first_0{1};
+    std::atomic<std::uint_fast64_t> death_last_0{1};
+    std::atomic<std::uint_fast64_t> death_first_1{1};
+    std::atomic<std::uint_fast64_t> death_last_1{1};
+    std::unordered_map<std::uint_fast64_t, EncounterLogPower> power_buffer_0;
+    std::unordered_map<std::uint_fast64_t, EncounterLogPower> power_buffer_1;
+    std::atomic<std::uint_fast64_t> power_first_0{1};
+    std::atomic<std::uint_fast64_t> power_last_0{1};
+    std::atomic<std::uint_fast64_t> power_first_1{1};
+    std::atomic<std::uint_fast64_t> power_last_1{1};
+
+public:
+    void switchBranch()
+    {
+        branch = !branch;
+    }
+
+    void pushCombat(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t guid,
+        EncounterLogState state,
+        std::string gear,
+        std::string talents,
+        std::string auras,
+        std::string stats,
+        std::uint_fast64_t timestamp
+    )
+    {
+        if (branch) {
+            combat_buffer_1.insert({combat_first_1, {
+                map_id,
+                instance_id,
+                guid,
+                state,
+                std::move(gear),
+                std::move(talents),
+                std::move(auras),
+                std::move(stats),
+                timestamp
+            }});
+
+            combat_first_1++;
+
+            return;
+        }
+
+        combat_buffer_0.insert({combat_first_0, {
+            map_id,
+            instance_id,
+            guid,
+            state,
+            std::move(gear),
+            std::move(talents),
+            std::move(auras),
+            std::move(stats),
+            timestamp
+        }});
+
+        combat_first_0++;
+    }
+
+    [[nodiscard]] std::string retrieveCombats(std::size_t count)
+    {
+        if (branch) {
+            count = std::min(count, combat_buffer_0.size());
+
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(combat_buffer_0.at(combat_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                combat_buffer_0.erase(combat_last_0);
+                i++;
+                combat_last_0++;
+            }
+
+            return result;
+        }
+
+        count = std::min(count, combat_buffer_1.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(combat_buffer_1.at(combat_last_1).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            combat_buffer_1.erase(combat_last_1);
+            i++;
+            combat_last_1++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getCombatBufferSize()
+    {
+        if (branch) {
+            return combat_buffer_0.size();
+        }
+
+        return combat_buffer_1.size();
+    }
+
+    void pushSpell(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t spell_id,
+        std::uint_fast32_t caster_owner_guid,
+        EncounterLogUnitType caster_owner_type,
+        std::uint_fast32_t caster_guid,
+        EncounterLogUnitType caster_type,
+        std::uint_fast32_t target_owner_guid,
+        EncounterLogUnitType target_owner_type,
+        std::uint_fast32_t target_guid,
+        EncounterLogUnitType target_type,
+        std::uint_fast32_t value,
+        std::uint_fast32_t over_value,
+        std::uint_fast32_t absorb_value,
+        std::uint_fast32_t resist_value,
+        std::uint_fast32_t block_value,
+        bool is_critical,
+        bool is_positive,
+        EncounterLogSpellResult result,
+        EncounterLogSpellFlag flag,
+        EncounterLogArbitraryFlag arbitrary_flag,
+        std::uint_fast64_t timestamp
+    )
+    {
+        if (branch) {
+            spell_buffer_1.insert({spell_first_1, {
+                map_id,
+                instance_id,
+                spell_id,
+                caster_owner_guid,
+                caster_owner_type,
+                caster_guid,
+                caster_type,
+                target_owner_guid,
+                target_owner_type,
+                target_guid,
+                target_type,
+                value,
+                over_value,
+                absorb_value,
+                resist_value,
+                block_value,
+                is_critical,
+                is_positive,
+                result,
+                flag,
+                arbitrary_flag,
+                timestamp
+            }});
+
+            spell_first_1++;
+
+            return;
+        }
+
+        spell_buffer_0.insert({spell_first_0, {
+            map_id,
+            instance_id,
+            spell_id,
+            caster_owner_guid,
+            caster_owner_type,
+            caster_guid,
+            caster_type,
+            target_owner_guid,
+            target_owner_type,
+            target_guid,
+            target_type,
+            value,
+            over_value,
+            absorb_value,
+            resist_value,
+            block_value,
+            is_critical,
+            is_positive,
+            result,
+            flag,
+            arbitrary_flag,
+            timestamp
+        }});
+
+        spell_first_0++;
+    }
+
+    [[nodiscard]] std::string retrieveSpells(std::size_t count)
+    {
+        if (branch) {
+            count = std::min(count, spell_buffer_0.size());
+
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(spell_buffer_0.at(spell_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                spell_buffer_0.erase(spell_last_0);
+                i++;
+                spell_last_0++;
+            }
+
+            return result;
+        }
+
+        count = std::min(count, spell_buffer_1.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(spell_buffer_1.at(spell_last_1).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            spell_buffer_1.erase(spell_last_1);
+            i++;
+            spell_last_1++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getSpellBufferSize()
+    {
+        if (branch) {
+            return spell_buffer_0.size();
+        }
+
+        return spell_buffer_1.size();
+    }
+
+    void pushMovement(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        double x,
+        double y,
+        double z,
+        double o,
+        std::uint_fast64_t timestamp
+    )
+    {
+        if (branch) {
+            movement_buffer_1.insert({movement_first_1, {
+                map_id,
+                instance_id,
+                owner_guid,
+                owner_type,
+                guid,
+                type,
+                x,
+                y,
+                z,
+                o,
+                timestamp
+            }});
+
+            movement_first_1++;
+        }
+
+        movement_buffer_0.insert({movement_first_0, {
+            map_id,
+            instance_id,
+            owner_guid,
+            owner_type,
+            guid,
+            type,
+            x,
+            y,
+            z,
+            o,
+            timestamp
+        }});
+
+        movement_first_0++;
+    }
+
+    [[nodiscard]] std::string retrieveMovements(std::size_t count)
+    {
+        if (branch) {
+            count = std::min(count, movement_buffer_0.size());
+
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(movement_buffer_0.at(movement_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                movement_buffer_0.erase(movement_last_0);
+                i++;
+                movement_last_0++;
+            }
+
+            return result;
+        }
+
+        count = std::min(count, movement_buffer_1.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(movement_buffer_1.at(movement_last_1).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            movement_buffer_1.erase(movement_last_1);
+            i++;
+            movement_last_1++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getMovementBufferSize()
+    {
+        if (branch) {
+            return movement_buffer_0.size();
+        }
+
+        return movement_buffer_1.size();
+    }
+
+    void pushDeath(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        std::uint_fast32_t killer_owner_guid,
+        EncounterLogUnitType killer_owner_type,
+        std::uint_fast32_t killer_guid,
+        EncounterLogUnitType killer_type,
+        std::uint_fast64_t timestamp
+    )
+    {
+        if (branch) {
+            death_buffer_1.insert({death_first_1, {
+                map_id,
+                instance_id,
+                owner_guid,
+                owner_type,
+                guid,
+                type,
+                killer_owner_guid,
+                killer_owner_type,
+                killer_guid,
+                killer_type,
+                timestamp
+            }});
+
+            death_first_1++;
+        }
+
+        death_buffer_0.insert({death_first_0, {
+            map_id,
+            instance_id,
+            owner_guid,
+            owner_type,
+            guid,
+            type,
+            killer_owner_guid,
+            killer_owner_type,
+            killer_guid,
+            killer_type,
+            timestamp
+        }});
+
+        death_first_0++;
+    }
+
+    [[nodiscard]] std::string retrieveDeaths(std::size_t count)
+    {
+        if (branch) {
+            count = std::min(count, death_buffer_0.size());
+
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(death_buffer_0.at(death_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                death_buffer_0.erase(death_last_0);
+                i++;
+                death_last_0++;
+            }
+
+            return result;
+        }
+
+        count = std::min(count, death_buffer_1.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(death_buffer_1.at(death_last_1).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            death_buffer_1.erase(death_last_1);
+            i++;
+            death_last_1++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getDeathBufferSize()
+    {
+        if (branch) {
+            return death_buffer_0.size();
+        }
+
+        return death_buffer_1.size();
+    }
+
+    void pushPower(
+        std::uint_fast16_t map_id,
+        std::uint_fast16_t instance_id,
+        std::uint_fast32_t owner_guid,
+        EncounterLogUnitType owner_type,
+        std::uint_fast32_t guid,
+        EncounterLogUnitType type,
+        EncounterLogSpellFlag power_type,
+        std::uint_fast32_t value,
+        bool is_max,
+        std::uint_fast64_t timestamp
+    )
+    {
+        if (branch) {
+            power_buffer_1.insert({power_first_1, {
+                map_id,
+                instance_id,
+                owner_guid,
+                owner_type,
+                guid,
+                type,
+                power_type,
+                value,
+                is_max,
+                timestamp
+            }});
+
+            power_first_1++;
+        }
+
+        power_buffer_0.insert({power_first_0, {
+            map_id,
+            instance_id,
+            owner_guid,
+            owner_type,
+            guid,
+            type,
+            power_type,
+            value,
+            is_max,
+            timestamp
+        }});
+
+        power_first_0++;
+    }
+
+    [[nodiscard]] std::string retrievePowers(std::size_t count)
+    {
+        if (branch) {
+            count = std::min(count, power_buffer_0.size());
+
+            std::string result;
+            result.reserve(count * 40);
+
+            std::uint_fast32_t i{1};
+
+            while (i <= count) {
+                result.append(power_buffer_0.at(power_last_0).asString());
+
+                if (i != count) {
+                    result.append(",");
+                }
+
+                power_buffer_0.erase(power_last_0);
+                i++;
+                power_last_0++;
+            }
+
+            return result;
+        }
+
+        count = std::min(count, power_buffer_1.size());
+
+        std::string result;
+        result.reserve(count * 40);
+
+        std::uint_fast32_t i{1};
+
+        while (i <= count) {
+            result.append(power_buffer_1.at(power_last_1).asString());
+
+            if (i != count) {
+                result.append(",");
+            }
+
+            power_buffer_1.erase(power_last_1);
+            i++;
+            power_last_1++;
+        }
+
+        return result;
+    }
+
+    [[nodiscard]] std::uint_fast32_t getPowerBufferSize()
+    {
+        if (branch) {
+            return power_buffer_0.size();
+        }
+
+        return power_buffer_1.size();
+    }
+};
+
+class EncounterLogs
+{
+private:
+    std::uint_fast32_t m_batch_size;
+    std::uint_fast32_t m_save_frequency;
+    std::uint_fast32_t m_map_id;
+    std::uint_fast32_t m_instance_id;
+    std::uint_fast64_t m_timestamp;
+    std::thread m_saver;
+    std::atomic<bool> m_stop_saver{false};
+    Circumrota m_buffer;
+#if __has_include(<cassandra.h>)
+    ScyllaDBManager *m_scylla{nullptr};
+#endif
+
+    void storeCombats()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getCombatBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                std::string query{
+                    "INSERT INTO {keyspace}.encounter_log_combats (id, map_id, instance_id, guid, state, gear, talents, auras, stats, timestamp) VALUES "
+                    + m_buffer.retrieveCombats(count) + ";"
+                };
+
+                m_scylla->executeAsync(query);
+
+                continue;
+            }
+#endif
+
+            if (EncounterLogHelpers::isDatabase()) {
+                LoginDatabase.Execute(
+                    "INSERT INTO encounter_log_combats (map_id, instance_id, guid, state, gear, talents, auras, stats, timestamp) VALUES " +
+                    m_buffer.retrieveCombats(count)
+                );
+            }
+        }
+    }
+
+    void storeDeaths()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getDeathBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                std::string query{
+                    "INSERT INTO {keyspace}.encounter_log_deaths (id, map_id, instance_id, owner_guid, owner_type, guid, type, killer_owner_guid, killer_owner_type, killer_guid, killer_type, timestamp) VALUES "
+                    + m_buffer.retrieveDeaths(count) + ";"
+                };
+
+                m_scylla->executeAsync(query);
+
+                continue;
+            }
+#endif
+
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_deaths (map_id, instance_id, owner_guid, owner_type, guid, type, killer_owner_guid, killer_owner_type, killer_guid, killer_type, timestamp) VALUES " +
+                m_buffer.retrieveDeaths(count)
+            );
+        }
+    }
+
+    void storeMovements()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getMovementBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                std::string query{
+                    "INSERT INTO {keyspace}.encounter_log_movements (id, map_id, instance_id, owner_guid, owner_type, guid, type, x, y, z, o, timestamp) VALUES "
+                    + m_buffer.retrieveMovements(count) + ";"
+                };
+
+                m_scylla->executeAsync(query);
+
+                continue;
+            }
+#endif
+
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_movements (map_id, instance_id, owner_guid, owner_type, guid, type, x, y, z, o, timestamp) VALUES " +
+                m_buffer.retrieveMovements(count)
+            );
+        }
+    }
+
+    void storePowers()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getPowerBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                std::string query{
+                    "INSERT INTO {keyspace}.encounter_log_powers (id, map_id, instance_id, owner_guid, owner_type, guid, type, power_type, value, is_max, timestamp) VALUES "
+                    + m_buffer.retrievePowers(count) + ";"
+                };
+
+                m_scylla->executeAsync(query);
+
+                continue;
+            }
+#endif
+
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_powers (map_id, instance_id, owner_guid, owner_type, guid, type, power_type, value, is_max, timestamp) VALUES " +
+                m_buffer.retrievePowers(count)
+            );
+        }
+    }
+
+    void storeSpells()
+    {
+        std::uint_fast32_t buffer_size = m_buffer.getSpellBufferSize();
+
+        std::vector<std::uint_fast32_t> result;
+
+        while (buffer_size >= m_batch_size) {
+            result.push_back(m_batch_size);
+
+            buffer_size -= m_batch_size;
+        }
+
+        if (buffer_size > 0) {
+            result.push_back(buffer_size);
+        }
+
+        for (const auto &count: result) {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                std::string query{
+                    "INSERT INTO {keyspace}.encounter_log_spells (id, map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, arbitrary_flag, timestamp) VALUES "
+                    + m_buffer.retrieveSpells(count) + ";"
+                };
+
+                m_scylla->executeAsync(query);
+
+                continue;
+            }
+#endif
+
+            LoginDatabase.Execute(
+                "INSERT INTO encounter_log_spells (map_id, instance_id, spell_id, caster_owner_guid, caster_owner_type, caster_guid, caster_type, target_owner_guid, target_owner_type, target_guid, target_type, value, over_value, absorb_value, resist_value, block_value, is_critical, is_positive, result, flag, arbitrary_flag, timestamp) VALUES " +
+                m_buffer.retrieveSpells(count)
+            );
+        }
+    }
+
+public:
+    EncounterLogs(
+        std::uint_fast32_t map_id,
+        std::uint_fast32_t instance_id,
+        std::uint_fast64_t timestamp,
+        bool with_record = true
+    ) : m_map_id{map_id}, m_instance_id{instance_id}, m_timestamp{timestamp}
+    {
+        m_batch_size = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.BatchSize", 1000);
+        m_save_frequency = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.SaveFrequency", 1000);
+
+        m_saver = std::thread([&]() {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                m_scylla = new ScyllaDBManager();
+
+                if (with_record) {
+                    std::string query{
+                        "INSERT INTO {keyspace}.encounter_logs (id, map_id, instance_id, timestamp) VALUES ("
+                        + std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_timestamp) + ");"
+                    };
+
+                    m_scylla->executeAsync(query);
+                }
+            }
+#endif
+
+            if (EncounterLogHelpers::isDatabase() && with_record) {
+                LoginDatabase.Execute(
+                    "INSERT INTO encounter_logs (map_id, instance_id, timestamp) VALUES (" +
+                    std::to_string(m_map_id) + "," + std::to_string(m_instance_id) + "," + std::to_string(m_timestamp) +
+                    ")"
+                );
+            }
+
+            while (!m_stop_saver) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(m_save_frequency));
+
+                m_buffer.switchBranch();
+
+                std::this_thread::sleep_for(50ms);
+
+                storeCombats();
+                storeDeaths();
+                storeMovements();
+                storePowers();
+                storeSpells();
+            }
+        });
+    }
+
+    ~EncounterLogs()
+    {
+        m_stop_saver = true;
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            delete m_scylla;
+        }
+#endif
+
+        m_saver.join();
+    }
+
+    Circumrota &getBuffer()
+    {
+        return m_buffer;
+    }
 };
 
 class EncounterLogActiveInstanceTracker
@@ -2074,42 +2219,80 @@ class EncounterLogActiveInstanceTracker
 private:
     std::thread m_tracker;
     std::atomic<bool> m_stop_tracker{false};
+    ScyllaDBManager *m_scylla{nullptr};
+    std::uint_fast32_t m_tracker_frequency;
 
 public:
     EncounterLogActiveInstanceTracker()
     {
+        m_tracker_frequency = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.System.ActiveInstanceTrackerFrequency", 1);
+
         m_tracker = std::thread([&]() {
+#if __has_include(<cassandra.h>)
+            if (EncounterLogHelpers::isScylla()) {
+                m_scylla = new ScyllaDBManager();
+            }
+#endif
+
             while (!m_stop_tracker) {
-                QueryResult unfinished_instances = LoginDatabase.Query(
-                    "SELECT start.* FROM encounter_logs start WHERE NOT EXISTS ("
-                    "SELECT 1 FROM encounter_log_instance_resets end WHERE end.map_id = start.map_id AND end.instance_id = start.instance_id AND end.timestamp >= start.timestamp"
-                    ")"
-                );
+                if (EncounterLogHelpers::isScylla()) {
+//                    std::shared_ptr<ScyllaDBQueryResult> result = m_scylla->select("SELECT name FROM {keyspace}.updates;");
+//
+//                    std::vector<std::uint_fast32_t> map_ids{};
+//                    std::vector<std::uint_fast32_t> instance_ids{};
+//
+//                    if (result) {
+//                        const CassRow *row{nullptr};
+//
+//                        while ((row = result->fetch()) != nullptr) {
+//                            const CassValue *field = cass_row_get_column(row, 0);
+//
+//                            cass_int32_t name;
+//
+//                            cass_value_get_int32(field, &name);
+//
+//                            updates.insert({name, true});
+//                        }
+//                    }
 
-                if (unfinished_instances) {
-                    do {
-                        Field *unfinished_instance = unfinished_instances->Fetch();
 
-                        auto map_id = unfinished_instance[0].Get<std::uint_fast32_t>();
-                        auto instance_id = unfinished_instance[1].Get<std::uint_fast32_t>();
-
-                        QueryResult instance = CharacterDatabase.Query(
-                            "SELECT id, map FROM instance i WHERE map = {} AND id = {} AND EXISTS (SELECT 1 FROM character_instance ch WHERE ch.instance = i.id)",
-                            map_id,
-                            instance_id
-                        );
-
-                        if (!instance) {
-                            LoginDatabase.Execute(
-                                "INSERT INTO encounter_log_instance_resets (map_id, instance_id, timestamp) VALUES (" +
-                                std::to_string(map_id) + "," + std::to_string(instance_id) + "," +
-                                std::to_string(EncounterLogHelpers::getTimestamp()) + ")"
-                            );
-                        }
-                    } while (unfinished_instances->NextRow());
+//                    m_scylla->executeAsync(
+//                        "INSERT INTO {keyspace}.encounter_log_instance_resets (id, map_id, instance_id, timestamp) VALUES ("
+//                        + std::to_string(map_id) + "," + std::to_string(instance_id) + "," + std::to_string(EncounterLogHelpers::getTimestamp()) + ")"
+//                    );
                 }
 
-                std::this_thread::sleep_for(60s);
+                if (EncounterLogHelpers::isDatabase()) {
+                    QueryResult unfinished_instances = LoginDatabase.Query(
+                        "SELECT start.* FROM encounter_logs start WHERE NOT EXISTS ("
+                        "SELECT 1 FROM encounter_log_instance_resets end WHERE end.map_id = start.map_id AND end.instance_id = start.instance_id AND end.timestamp >= start.timestamp"
+                        ")"
+                    );
+
+                    if (unfinished_instances) {
+                        do {
+                            Field *unfinished_instance = unfinished_instances->Fetch();
+
+                            auto map_id = unfinished_instance[0].Get<std::uint_fast32_t>();
+                            auto instance_id = unfinished_instance[1].Get<std::uint_fast32_t>();
+
+                            QueryResult instance = CharacterDatabase.Query(
+                                "SELECT id, map FROM instance i WHERE map = {} AND id = {} AND EXISTS (SELECT 1 FROM character_instance ch WHERE ch.instance = i.id)",
+                                map_id,
+                                instance_id
+                            );
+
+                            if (!instance) {
+                                LoginDatabase.Execute(
+                                    "INSERT INTO encounter_log_instance_resets (map_id, instance_id, timestamp) VALUES (" +
+                                    std::to_string(map_id) + "," + std::to_string(instance_id) + "," + std::to_string(EncounterLogHelpers::getTimestamp()) + ")"
+                                );
+                            }
+                        } while (unfinished_instances->NextRow());
+                    }
+                }
+
+                std::this_thread::sleep_for(std::chrono::seconds(m_tracker_frequency));
             }
         });
     }
@@ -2117,6 +2300,12 @@ public:
     ~EncounterLogActiveInstanceTracker()
     {
         m_stop_tracker = true;
+
+#if __has_include(<cassandra.h>)
+        if (EncounterLogHelpers::isScylla()) {
+            delete m_scylla;
+        }
+#endif
 
         m_tracker.join();
     }
@@ -2131,12 +2320,14 @@ private:
     static bool m_open_world_tracking;
     static std::unordered_map<std::uint_fast32_t, bool> m_open_world_tracked_creature_entries;
     static std::unordered_map<std::uint_fast32_t, bool> m_open_world_tracked_creature_guids;
+    static std::uint_fast32_t m_scope;
 
 public:
     static void init()
     {
-        QueryResult instances = CharacterDatabase.Query(
-            "SELECT id, map FROM instance i WHERE EXISTS (SELECT 1 FROM character_instance ch WHERE ch.instance = i.id)");
+        m_scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
+
+        QueryResult instances = CharacterDatabase.Query("SELECT id, map FROM instance i WHERE EXISTS (SELECT 1 FROM character_instance ch WHERE ch.instance = i.id)");
 
         if (instances) {
             do {
@@ -2212,16 +2403,12 @@ public:
 
     [[nodiscard]] static bool dungeonsDisabled()
     {
-        auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
-
-        return scope != ENCOUNTER_LOG_SCOPE_EVERYTHING && scope != ENCOUNTER_LOG_SCOPE_DUNGEON;
+        return m_scope != ENCOUNTER_LOG_SCOPE_EVERYTHING && m_scope != ENCOUNTER_LOG_SCOPE_DUNGEON;
     }
 
     [[nodiscard]] static bool raidsDisabled()
     {
-        auto scope = sConfigMgr->GetOption<std::uint_fast32_t>("EncounterLogs.Logging.Scope", 3);
-
-        return scope != ENCOUNTER_LOG_SCOPE_EVERYTHING && scope != ENCOUNTER_LOG_SCOPE_RAID;
+        return m_scope != ENCOUNTER_LOG_SCOPE_EVERYTHING && m_scope != ENCOUNTER_LOG_SCOPE_RAID;
     }
 
     [[nodiscard]] static bool creatureIsTracked(Unit *unit)
