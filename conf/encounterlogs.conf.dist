@@ -11,6 +11,27 @@
 
 EncounterLogs.General.Enabled = 1
 
+#
+#    EncounterLogs.General.Database
+#        Default:     database
+#                     scylladb
+#
+
+EncounterLogs.General.Database = database
+
+########################################
+# ScyllaDB configuration (Needed only for ScyllaDB)
+########################################
+
+EncounterLogs.ScyllaDB.Host = 127.0.0.1
+EncounterLogs.ScyllaDB.Port = 9042
+EncounterLogs.ScyllaDB.Keyspace = encounter_logs
+EncounterLogs.ScyllaDB.Username = admin
+EncounterLogs.ScyllaDB.Password = admin
+EncounterLogs.ScyllaDB.ReplicationStrategy = SimpleStrategy
+EncounterLogs.ScyllaDB.ReplicationFactor = 1
+EncounterLogs.ScyllaDB.CheckAsyncQueries = 0
+
 ########################################
 # Logging configuration
 ########################################
@@ -58,3 +79,13 @@ EncounterLogs.System.SaveFrequency = 1000
 #
 
 EncounterLogs.System.BatchSize = 1000
+
+#
+#    EncounterLogs.System.ActiveInstanceTrackerFrequency
+#        Description: Interval for checking which instances are closed and creating log for it
+#                     Running this every second is pointless but increasing this time would increase delay when turning off server
+#                     This system should be probably reworked
+#        Default:     1
+#
+
+EncounterLogs.System.ActiveInstanceTrackerFrequency = 1

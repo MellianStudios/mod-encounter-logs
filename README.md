@@ -50,5 +50,18 @@ player tracking is always ON in instances
 > you can find all of it here https://github.com/MellianStudios/azerothcore-wotlk/tree/encounter-logs
 ---
 
+## ScyllaDB
+I'm not going to include install and configuration steps for server however I will include connector installation
+- sudo apt install libuv1-dev
+- git clone https://github.com/datastax/cpp-driver.git
+- cd cpp-driver
+- mkdir build && cd build
+- cmake ..
+- make install
+
+Also with scylla you have to change BatchSize in config to 1 and with that i would suggest you lower SaveFrequency
+
+--
+
 ## Credits / contributors
 - [Anchy](https://github.com/AnchyDev) (general support)
